@@ -7,27 +7,21 @@ import RevealOnScroll from "./RevealOnScroll";
 export default function HeroGallery() {
   return (
     <div className="relative w-full max-w-[500px] mx-auto md:mx-0">
-      {/* Background Arch Decoration */}
+      {/* ── Background Arch Decoration ────────────────── */}
       <div
-        className="absolute -inset-10 opacity-[0.52] pointer-events-none select-none z-0"
+        className="absolute inset-x-0 -inset-y-10 pointer-events-none select-none z-0 flex justify-center text-center"
         aria-hidden="true"
       >
-        {/* The Clipping Mask Definition */}
-        <svg width="0" height="0" className="absolute">
-          <defs>
-            <clipPath id="arch-clip" clipPathUnits="objectBoundingBox">
-              <path d="M0.15,1 V0.333 C0.15,0.149 0.3,0 0.5,0 C0.7,0 0.85,0.149 0.85,0.333 V1 H0.15 Z" />
-            </clipPath>
-          </defs>
-        </svg>
-
-        <div className="w-full h-full relative" style={{ clipPath: 'url(#arch-clip)' }}>
-          {/* Subtle Arch Background */}
-          <div className="absolute inset-0 bg-white opacity-[0.1]" />
-          
+        <div 
+          className="w-[88%] h-full bg-white/5 overflow-hidden transition-opacity duration-700 delay-150 relative isolate"
+          style={{ 
+            borderRadius: '100% 100% 0 0 / 32% 32% 0 0',
+            transform: 'translateZ(0)'
+          }}
+        >
           {/* The Waves Interaction */}
           <Waves
-            lineColor="oklch(82% 0.16 85 / 0.15)"
+            lineColor="oklch(82% 0.16 85 / 0.12)"
             backgroundColor="transparent"
             waveSpeedX={0.015}
             waveSpeedY={0.01}
