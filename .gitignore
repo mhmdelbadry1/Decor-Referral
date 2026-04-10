@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+
+# Next.js Build
+.next/
+out/
+
+# Production Build
+build/
+dist/
+
+# Environment Variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Debug Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# OS Files
+.DS_Store
+*.pem
+
+# Local IDE Files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Project Specific
+.agents/
+.opencode/
+website\ design.txt
