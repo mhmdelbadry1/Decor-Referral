@@ -70,14 +70,14 @@ export default function Nav() {
                 aria-label={item.label}
               >
                 {item.icon}
-                {/* Tooltip - position to the right of the sidebar */}
+                {/* Tooltip - on right side of nav item */}
                 <span className="
-                  absolute left-full ms-3 top-1/2 -translate-y-1/2
+                  absolute left-[calc(100%+0.5rem)] top-1/2 -translate-y-1/2
                   bg-accent text-surface text-[0.7rem] px-3 py-1.5 rounded-sm
                   whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100
                   transition-opacity duration-150 shadow-sm
-                  after:content-[''] after:absolute after:end-full after:top-1/2 after:-translate-y-1/2
-                  after:border-4 after:border-transparent after:border-e-accent
+                  before:content-[''] before:absolute before:right-full before:top-1/2 before:-translate-y-1/2
+                  before:border-[6px] before:border-transparent before:border-r-accent
                 ">
                   {item.label}
                 </span>
