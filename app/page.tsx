@@ -1,7 +1,6 @@
 import Nav from '@/components/Nav'
 import Hero from '@/components/Hero'
 import About from '@/components/About'
-import StatsBand from '@/components/StatsBand'
 import Process from '@/components/Process'
 import ConsultationForm from '@/components/ConsultationForm'
 import PartnerRegistrationForm from '@/components/PartnerRegistrationForm'
@@ -29,8 +28,7 @@ export default function LandingPage() {
       <main id="main-content">
         <Hero />
         <About />
-        <StatsBand />
-        <Process />
+<Process />
         <ConsultationForm />
         <PartnerRegistrationForm />
       </main>
