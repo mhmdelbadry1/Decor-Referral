@@ -2,7 +2,6 @@ import Nav from '@/components/Nav'
 import Hero from '@/components/Hero'
 import About from '@/components/About'
 import StatsBand from '@/components/StatsBand'
-import Testimonials from '@/components/Testimonials'
 import Process from '@/components/Process'
 import ConsultationForm from '@/components/ConsultationForm'
 import PartnerRegistrationForm from '@/components/PartnerRegistrationForm'
@@ -31,7 +30,6 @@ export default function LandingPage() {
         <Hero />
         <About />
         <StatsBand />
-        <Testimonials />
         <Process />
         <ConsultationForm />
         <PartnerRegistrationForm />
