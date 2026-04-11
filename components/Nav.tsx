@@ -88,7 +88,7 @@ export default function Nav() {
 
         {/* Year indicator */}
         <div className="mt-auto text-[0.65rem] font-bold tracking-widest whitespace-nowrap" style={{ transform: 'rotate(-90deg)', color: '#5c3d2e', opacity: 0.3 }}>
-          EST. 2025
+          EST. 2026
         </div>
       </nav>
 

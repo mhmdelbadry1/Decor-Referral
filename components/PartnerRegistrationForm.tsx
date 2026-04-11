@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useRef, useState } from 'react'
+import PhoneInput from '@/components/PhoneInput'
 
 /* ── Types ────────────────────────────────────────────── */
 type CompanyData = {
@@ -9,6 +10,7 @@ type CompanyData = {
   cities: string[]
   contactName: string
   phone: string
+  phoneNormalized: string | null
 }
 
 const CITIES = [
@@ -89,6 +91,7 @@ export default function PartnerRegistrationForm() {
     cities: [],
     contactName: '',
     phone: '',
+    phoneNormalized: null,
   })
 
   const companyNameRef  = useRef<HTMLInputElement>(null)
@@ -137,7 +140,7 @@ export default function PartnerRegistrationForm() {
 
   function handleSubmit() {
     if (!data.contactName.trim()) { shake(contactNameRef.current); return }
-    if (!data.phone.trim())       { shake(phoneRef.current);       return }
+    if (!data.phoneNormalized)    { shake(phoneRef.current);       return }
     // TODO: POST to Supabase or API route
     console.log('Partner registration submitted:', data)
     setSubmitted(true)
@@ -398,32 +401,16 @@ export default function PartnerRegistrationForm() {
                       />
                     </div>
                     <div>
-                      <label
-                        htmlFor="p-phone"
-                        className="block text-[0.8rem] font-medium text-ink-dim mb-2"
-                      >
-                        رقم جوال المسؤول
-                      </label>
-                      <input
+                      <PhoneInput
                         ref={phoneRef}
                         id="p-phone"
-                        type="tel"
-                        placeholder="+966 5X XXX XXXX"
                         value={data.phone}
-                        onChange={(e) => setData((d) => ({ ...d, phone: e.target.value }))}
-                        autoComplete="tel"
-                        className="
-                          input-field w-full px-4 py-[13px] border border-line rounded-sm
-                          bg-bg text-ink font-body text-base
-                          placeholder:text-ink-faint
-                          transition-[border-color,box-shadow] duration-[180ms]
-                        "
-                        dir="ltr"
-                        style={{ textAlign: 'left' }}
-                        aria-required="true"
+                        onChange={(raw, normalized) =>
+                          setData((d) => ({ ...d, phone: raw, phoneNormalized: normalized }))
+                        }
                         aria-describedby="p-phone-hint"
                       />
-                      <span id="p-phone-hint" className="text-[0.76rem] text-ink-faint mt-1.5 block">
+                      <span id="p-phone-hint" className="text-[0.76rem] text-ink-faint mt-1 block">
                         سيتواصل المستشار معكم للتحقق والتفاصيل
                       </span>
                     </div>

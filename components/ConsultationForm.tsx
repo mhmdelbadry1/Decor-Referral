@@ -1,6 +1,8 @@
 'use client'
 
 import { useCallback, useRef, useState, type ReactNode, type CSSProperties } from 'react'
+import { submitLead } from '@/app/actions/submitLead'
+import PhoneInput from '@/components/PhoneInput'
 
 /* ── Types ────────────────────────────────────────────── */
 type FormData = {
@@ -8,7 +10,8 @@ type FormData = {
   services: string[]
   budget: string | null
   name: string
-  phone: string
+  phone: string          // raw input
+  phoneNormalized: string | null  // E.164 for DB
   email: string
 }
 
@@ -130,8 +133,10 @@ function shake(el: HTMLElement | null) {
 export default function ConsultationForm() {
   const [step, setStep] = useState(0)
   const [submitted, setSubmitted] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
   const [data, setData] = useState<FormData>({
-    city: null, services: [], budget: null, name: '', phone: '', email: '',
+    city: null, services: [], budget: null, name: '', phone: '', phoneNormalized: null, email: '',
   })
 
   /* Refs for shake targets and focus management */
@@ -169,12 +174,27 @@ export default function ConsultationForm() {
     focusQuestion()
   }
 
-  function handleSubmit() {
-    if (!data.name)  { shake(nameRef.current);  return }
-    if (!data.phone) { shake(phoneRef.current); return }
-    // TODO: POST to Supabase or API route
-    console.log('Lead submitted:', data)
-    setSubmitted(true)
+  async function handleSubmit() {
+    if (!data.name)             { shake(nameRef.current);  return }
+    if (!data.phoneNormalized)  { shake(phoneRef.current); return }
+
+    setSubmitting(true)
+    setSubmitError(null)
+    try {
+      await submitLead({
+        city:     data.city!,
+        services: data.services,
+        budget:   data.budget!,
+        name:     data.name,
+        phone:    data.phoneNormalized,
+        email:    data.email,
+      })
+      setSubmitted(true)
+    } catch {
+      setSubmitError('حدث خطأ أثناء الإرسال. حاول مجدداً.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   /* Single-select helper (city, budget) */
@@ -436,32 +456,16 @@ export default function ConsultationForm() {
                       />
                     </div>
                     <div>
-                      <label
-                        htmlFor="f-phone"
-                        className="block text-[0.82rem] font-medium text-ink-dim mb-2"
-                      >
-                        رقم الجوال
-                      </label>
-                      <input
+                      <PhoneInput
                         ref={phoneRef}
                         id="f-phone"
-                        type="tel"
-                        placeholder="+966 5X XXX XXXX"
                         value={data.phone}
-                        onChange={(e) => setData((d) => ({ ...d, phone: e.target.value }))}
-                        autoComplete="tel"
-                        className="
-                          input-field w-full px-4 py-[13px] border border-line rounded-sm
-                          bg-bg text-ink font-body text-base
-                          placeholder:text-ink-faint
-                          transition-[border-color,box-shadow] duration-[180ms]
-                        "
-                        dir="ltr"
-                        style={{ textAlign: 'left' }}
-                        aria-required="true"
-                        aria-describedby="phone-hint"
+                        onChange={(raw, normalized) =>
+                          setData((d) => ({ ...d, phone: raw, phoneNormalized: normalized }))
+                        }
+                        aria-describedby="f-phone-wa-hint"
                       />
-                      <span id="phone-hint" className="text-[0.77rem] text-ink-faint mt-1 block">
+                      <span id="f-phone-wa-hint" className="text-[0.77rem] text-ink-faint mt-1 block">
                         سيتم التواصل معك عبر واتساب خلال 24 ساعة
                       </span>
                     </div>
@@ -495,40 +499,52 @@ export default function ConsultationForm() {
               </div>
 
               {/* ── Step navigation ───────────────────── */}
-              <div className="flex items-center justify-between mt-6 pt-4 border-t border-line">
-                {step > 0 ? (
+              <div className="flex flex-col gap-3 mt-6 pt-4 border-t border-line">
+                {submitError && (
+                  <p className="text-[0.83rem] text-center" style={{ color: 'oklch(65% 0.18 25)' }}>
+                    {submitError}
+                  </p>
+                )}
+                <div className="flex items-center justify-between">
+                  {step > 0 ? (
+                    <button
+                      type="button"
+                      onClick={goPrev}
+                      disabled={submitting}
+                      className="
+                        font-body text-[0.88rem] text-ink-faint bg-transparent
+                        border border-line px-4 py-2 rounded-full cursor-pointer
+                        transition-[color,border-color,transform] duration-[180ms]
+                        hover:text-ink hover:border-line-strong hover:scale-105
+                        active:scale-95 disabled:opacity-40
+                      "
+                      aria-label="العودة للسؤال السابق"
+                    >
+                      → رجوع
+                    </button>
+                  ) : (
+                    <span className="invisible" aria-hidden="true">رجوع</span>
+                  )}
+
                   <button
                     type="button"
-                    onClick={goPrev}
+                    onClick={step < 3 ? goNext : handleSubmit}
+                    disabled={submitting}
                     className="
-                      font-body text-[0.88rem] text-ink-faint bg-transparent
-                      border border-line px-4 py-2 rounded-full cursor-pointer
-                      transition-[color,border-color,transform] duration-[180ms]
-                      hover:text-ink hover:border-line-strong hover:scale-105
-                      active:scale-95
+                      ms-auto bg-accent text-surface font-body text-[0.97rem] font-medium
+                      px-8 py-[11px] rounded-full border-none cursor-pointer
+                      transition-all duration-[180ms]
+                      hover:bg-accent-hover hover:-translate-y-px hover:shadow-lg
+                      active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed
+                      flex items-center gap-2
                     "
-                    aria-label="العودة للسؤال السابق"
                   >
-                    → رجوع
+                    {submitting && (
+                      <span className="w-4 h-4 border-2 border-surface border-t-transparent rounded-full animate-spin" aria-hidden="true" />
+                    )}
+                    {step < 3 ? 'التالي ←' : submitting ? 'جاري الإرسال…' : 'إرسال الطلب ✓'}
                   </button>
-                ) : (
-                  /* Invisible placeholder to keep layout stable */
-                  <span className="invisible" aria-hidden="true">رجوع</span>
-                )}
-
-                <button
-                  type="button"
-                  onClick={step < 3 ? goNext : handleSubmit}
-                  className="
-                    ms-auto bg-accent text-surface font-body text-[0.97rem] font-medium
-                    px-8 py-[11px] rounded-full border-none cursor-pointer
-                    transition-all duration-[180ms]
-                    hover:bg-accent-hover hover:-translate-y-px hover:shadow-lg
-                    active:scale-95
-                  "
-                >
-                  {step < 3 ? 'التالي ←' : 'إرسال الطلب ✓'}
-                </button>
+                </div>
               </div>
             </div>
           )}
