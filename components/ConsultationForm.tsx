@@ -5,10 +5,11 @@ import { useCallback, useRef, useState, type ReactNode, type CSSProperties } fro
 /* ── Types ────────────────────────────────────────────── */
 type FormData = {
   city: string | null
-  service: string | null
+  services: string[]
   budget: string | null
   name: string
   phone: string
+  email: string
 }
 
 const CITIES = [
@@ -129,15 +130,15 @@ export default function ConsultationForm() {
   const [step, setStep] = useState(0)
   const [submitted, setSubmitted] = useState(false)
   const [data, setData] = useState<FormData>({
-    city: null, service: null, budget: null, name: '', phone: '',
+    city: null, services: [], budget: null, name: '', phone: '', email: '',
   })
 
   /* Refs for shake targets and focus management */
-  const cityRef    = useRef<HTMLDivElement>(null)
-  const serviceRef = useRef<HTMLDivElement>(null)
-  const budgetRef  = useRef<HTMLDivElement>(null)
-  const nameRef    = useRef<HTMLInputElement>(null)
-  const phoneRef   = useRef<HTMLInputElement>(null)
+  const cityRef     = useRef<HTMLDivElement>(null)
+  const serviceRef  = useRef<HTMLDivElement>(null)
+  const budgetRef   = useRef<HTMLDivElement>(null)
+  const nameRef     = useRef<HTMLInputElement>(null)
+  const phoneRef    = useRef<HTMLInputElement>(null)
   const questionRef = useRef<HTMLDivElement>(null)
 
   /* Move focus to step question for screen reader flow */
@@ -145,10 +146,19 @@ export default function ConsultationForm() {
     setTimeout(() => questionRef.current?.focus(), 50)
   }, [])
 
+  function toggleService(val: string) {
+    setData((d) => ({
+      ...d,
+      services: d.services.includes(val)
+        ? d.services.filter((s) => s !== val)
+        : [...d.services, val],
+    }))
+  }
+
   function goNext() {
-    if (step === 0 && !data.city)    { shake(cityRef.current);    return }
-    if (step === 1 && !data.service) { shake(serviceRef.current); return }
-    if (step === 2 && !data.budget)  { shake(budgetRef.current);  return }
+    if (step === 0 && !data.city)              { shake(cityRef.current);    return }
+    if (step === 1 && data.services.length === 0) { shake(serviceRef.current); return }
+    if (step === 2 && !data.budget)            { shake(budgetRef.current);  return }
     setStep((s) => s + 1)
     focusQuestion()
   }
@@ -166,7 +176,7 @@ export default function ConsultationForm() {
     setSubmitted(true)
   }
 
-  /* Pill/tile selection helpers */
+  /* Single-select helper (city, budget) */
   function select(key: keyof FormData, value: string) {
     setData((d) => ({ ...d, [key]: value }))
   }
@@ -187,7 +197,7 @@ export default function ConsultationForm() {
   const STEP_LABELS = ['السؤال ١ من ٤', 'السؤال ٢ من ٤', 'السؤال ٣ من ٤', 'السؤال ٤ من ٤']
   const STEP_QUESTIONS = [
     'في أي مدينة يقع منزلك؟',
-    'ما الخدمة التي تحتاجها؟',
+    'ما الخدمات التي تحتاجها؟',
     'ما ميزانيتك التقريبية للمشروع؟',
     'كيف يمكننا التواصل معك؟',
   ]
@@ -315,32 +325,47 @@ export default function ConsultationForm() {
                   </div>
                 )}
  
-                {/* Step 1: Service */}
+                {/* Step 1: Services (multi-select) */}
                 {step === 1 && (
-                  <div
-                    ref={serviceRef}
-                    className="grid grid-cols-2 gap-3 sm:grid-cols-3"
-                    role="group"
-                    aria-label="اختر نوع الخدمة"
-                  >
-                    {SERVICES.map(({ label, icon }) => {
-                      const isSelected = data.service === label
-                      return (
-                        <button
-                          key={label}
-                          type="button"
-                          role="radio"
-                          aria-checked={isSelected}
-                          onClick={() => select('service', label)}
-                          className={`${coreTile} ${isSelected ? selectedTile : restTile}`}
-                        >
-                          <div className={`transition-transform duration-300 ${isSelected ? 'scale-110' : ''}`}>
-                            {icon}
-                          </div>
-                          {label}
-                        </button>
-                      )
-                    })}
+                  <div className="flex flex-col gap-3">
+                    <p className="text-[0.78rem] text-ink-faint">
+                      يمكنك اختيار أكثر من خدمة
+                    </p>
+                    <div
+                      ref={serviceRef}
+                      className="grid grid-cols-2 gap-3 sm:grid-cols-3"
+                      role="group"
+                      aria-label="اختر نوع الخدمة"
+                    >
+                      {SERVICES.map(({ label, icon }) => {
+                        const isSelected = data.services.includes(label)
+                        return (
+                          <button
+                            key={label}
+                            type="button"
+                            role="checkbox"
+                            aria-checked={isSelected}
+                            onClick={() => toggleService(label)}
+                            className={`${coreTile} ${isSelected ? selectedTile : restTile} relative`}
+                          >
+                            {isSelected && (
+                              <span
+                                className="absolute top-2 start-2 w-4 h-4 rounded-full bg-surface flex items-center justify-center"
+                                aria-hidden="true"
+                              >
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--color-accent)' }}>
+                                  <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                              </span>
+                            )}
+                            <div className={`transition-transform duration-300 ${isSelected ? 'scale-110' : ''}`}>
+                              {icon}
+                            </div>
+                            {label}
+                          </button>
+                        )
+                      })}
+                    </div>
                   </div>
                 )}
  
@@ -438,6 +463,31 @@ export default function ConsultationForm() {
                       <span id="phone-hint" className="text-[0.77rem] text-ink-faint mt-1 block">
                         سيتم التواصل معك عبر واتساب خلال 24 ساعة
                       </span>
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="f-email"
+                        className="block text-[0.82rem] font-medium text-ink-dim mb-2"
+                      >
+                        البريد الإلكتروني{' '}
+                        <span className="text-ink-faint font-normal">(اختياري)</span>
+                      </label>
+                      <input
+                        id="f-email"
+                        type="email"
+                        placeholder="example@email.com"
+                        value={data.email}
+                        onChange={(e) => setData((d) => ({ ...d, email: e.target.value }))}
+                        autoComplete="email"
+                        className="
+                          input-field w-full px-4 py-[13px] border border-line rounded-sm
+                          bg-bg text-ink font-body text-base
+                          placeholder:text-ink-faint
+                          transition-[border-color,box-shadow] duration-[180ms]
+                        "
+                        dir="ltr"
+                        style={{ textAlign: 'left' }}
+                      />
                     </div>
                   </div>
                 )}

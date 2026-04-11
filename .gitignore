@@ -41,3 +41,10 @@ yarn-error.log*
 .agents/
 .opencode/
 website\ design.txt
+
+notes
+
+# MCP config 
+.mcp.json
+
+.claude

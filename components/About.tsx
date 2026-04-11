@@ -2,7 +2,7 @@ import Image from 'next/image'
 import RevealOnScroll from './RevealOnScroll'
 
 const TRUST_CHIPS = [
-  'شركات مفحوصة ومعتمدة',
+  'شركات معتمدة',
   'خدمة مجانية للعميل',
   'ضمان جودة العروض',
   'متابعة حتى إغلاق الصفقة',
@@ -34,20 +34,23 @@ export default function About() {
 
         {/* Content */}
         <RevealOnScroll>
-          <span className="block text-[0.78rem] font-bold text-ink-faint mb-3">
-            من نحن
+          <span className="block text-[0.78rem] font-bold text-ink-faint mb-1">
+            محمد القديحي
+          </span>
+          <span className="block text-[0.75rem] text-ink-faint mb-4">
+            متخصص في خامات الديكور
           </span>
           <h2
             className="font-display font-bold text-ink leading-[1.25] mb-6"
             style={{ fontSize: 'clamp(1.7rem, 5vw, 2.5rem)' }}
           >
-            مستشار تشطيب يعمل لصالحك — لا للشركات
+            أساعدك توصل للشركة المناسبة
           </h2>
           <p className="text-ink-dim leading-[1.85] max-w-[52ch] mb-8 text-[1.02rem]">
-            بخبرة تمتد لأكثر من 10 سنوات في سوق التشطيب والديكور الداخلي
-            بالمملكة العربية السعودية، نعرف من هم المقاولون الموثوقون في كل
-            مدينة — ومن يجب تجنبهم. خدمتنا مجانية للعملاء تماماً؛ نكسب عمولتنا
-            من الشركات الشريكة التي تجتاز معاييرنا الصارمة فقط.
+            بخبرة تمتد لأكثر من ١٠ سنوات في سوق الديكور بالمملكة العربية
+            السعودية، أعرف من هم المقاولون الموثوقون في كل مدينة. الخدمة
+            مجانية للعملاء — نكسب عمولتنا من الشركات التي تجتاز معاييرنا
+            الصارمة فقط.
           </p>
 
           {/* Trust chips */}

@@ -5,6 +5,7 @@ import StatsBand from '@/components/StatsBand'
 import Testimonials from '@/components/Testimonials'
 import Process from '@/components/Process'
 import ConsultationForm from '@/components/ConsultationForm'
+import PartnerRegistrationForm from '@/components/PartnerRegistrationForm'
 import Footer from '@/components/Footer'
 import WhatsAppFab from '@/components/WhatsAppFab'
 
@@ -33,6 +34,7 @@ export default function LandingPage() {
         <Testimonials />
         <Process />
         <ConsultationForm />
+        <PartnerRegistrationForm />
       </main>
 
       <Footer />

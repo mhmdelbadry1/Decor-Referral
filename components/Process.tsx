@@ -51,13 +51,13 @@ export default function Process() {
       <div className="max-w-[1000px] mx-auto">
         <RevealOnScroll className="text-center mb-16">
           <span className="block text-[0.78rem] font-bold text-accent mb-3 tracking-widest uppercase">
-            رحلتك معنا
+            رحلتك معانا
           </span>
           <h2
             className="font-display font-bold text-ink max-w-[20ch] mx-auto leading-[1.2] mb-6"
             style={{ fontSize: 'clamp(2rem, 6vw, 2.8rem)' }}
           >
-            كيف ستحصل على المنسق المثالي؟
+            كيف توصل للشركة المناسبة؟
           </h2>
           <div className="w-12 h-1 bg-accent mx-auto rounded-full" />
         </RevealOnScroll>
@@ -91,7 +91,7 @@ export default function Process() {
                   w-16 h-16 rounded-2xl bg-surface border border-line shadow-sm
                   flex items-center justify-center text-accent mb-6
                   transition-all duration-300 group-hover:-translate-y-2 group-hover:shadow-lg
-                  group-hover:border-accent
+                  group-hover:border-accent relative z-10
                 "
               >
                 {step.icon}

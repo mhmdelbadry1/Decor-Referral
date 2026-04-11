@@ -25,7 +25,7 @@ export default function Hero() {
             style={{ height: '1px', background: 'var(--color-accent)' }}
             aria-hidden="true"
           />
-          مستشار تشطيب · المملكة العربية السعودية
+          مستشار الديكور · المملكة العربية السعودية
         </span>
 
         {/* Heading */}
@@ -33,7 +33,7 @@ export default function Hero() {
           className="font-display font-bold text-ink mb-6 leading-[1.22] max-w-[16ch]"
           style={{ fontSize: 'clamp(2.1rem, 7vw, 3.8rem)' }}
         >
-          احصل على أفضل شركات الديكور لمنزلك
+          احصل على أفضل شركات الديكور لبيتك
         </h1>
 
         {/* Sub-heading */}
@@ -41,8 +41,7 @@ export default function Hero() {
           className="text-ink-dim leading-[1.75] mb-8 max-w-[42ch]"
           style={{ fontSize: 'clamp(1rem, 2.5vw, 1.1rem)' }}
         >
-          نربطك بأفضل مقاولي التشطيب الموثوقين في مدينتك — بناءً على ميزانيتك
-          وخدمتك المطلوبة. مجاناً تماماً.
+          نربطك بأفضل شركات الديكور الموثوقة في مدينتك — على حسب ميزانيتك واحتياجك. مجاناً.
         </p>
 
         {/* Actions */}
@@ -61,23 +60,9 @@ export default function Hero() {
               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-bg
             "
           >
-            ابدأ الآن — مجاناً
+            ابدأ الآن مجاناً
           </button>
 
-          <button
-            type="button"
-            onClick={() => document.getElementById('about-section')?.scrollIntoView({ behavior: 'smooth' })}
-            className="
-              font-body text-[0.9rem] text-ink-dim bg-transparent
-              border border-line-strong px-6 py-[13px] rounded-full cursor-pointer
-              transition-all duration-200
-              hover:border-accent hover:text-accent hover:-translate-y-px
-              active:scale-[0.98]
-              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg
-            "
-          >
-            تعرف علينا
-          </button>
         </div>
 
         {/* Proof stats */}
