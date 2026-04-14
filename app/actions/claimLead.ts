@@ -2,12 +2,18 @@
 
 import { createServerClient } from '@/lib/supabase'
 import { revalidatePath } from 'next/cache'
+import { UuidSchema } from '@/lib/validators'
 
 export type ClaimResult =
   | { success: true }
   | { success: false; reason: 'invalid_token' | 'already_claimed' | 'banned' }
 
 export async function claimLead(claimToken: string): Promise<ClaimResult> {
+  // Validate token shape before hitting DB
+  if (!UuidSchema.safeParse(claimToken).success) {
+    return { success: false, reason: 'invalid_token' }
+  }
+
   const supabase = createServerClient()
 
   // Resolve claimToken → lead_id + company_id

@@ -1,28 +1,29 @@
 'use server'
 
 import { createServerClient } from '@/lib/supabase'
+import { PartnerSchema } from '@/lib/validators'
 
-type PartnerRegistrationInput = {
-  companyName: string
-  services: string[]
-  cities: string[]
-  contactName: string
-  phone: string
-}
+export async function submitPartnerRegistration(data: unknown) {
+  // Runtime validation — prevents bots and malformed submissions
+  const parsed = PartnerSchema.safeParse(data)
+  if (!parsed.success) {
+    const firstError = parsed.error.issues[0]?.message ?? 'بيانات غير صحيحة'
+    throw new Error(firstError)
+  }
 
-export async function submitPartnerRegistration(data: PartnerRegistrationInput) {
+  const { companyName, contactName, phone, services, cities } = parsed.data
   const supabase = createServerClient()
 
   const { error } = await supabase.from('companies').insert({
-    name:          data.companyName,
-    specialty:     data.services,
-    city:          data.cities,
-    rep_whatsapp:  data.phone,
-    rep_name:      data.contactName,
+    name:         companyName,
+    specialty:    services,
+    city:         cities,
+    rep_whatsapp: phone,
+    rep_name:     contactName,
   })
 
   if (error) {
-    console.error('Supabase insert error:', JSON.stringify(error, null, 2))
-    throw new Error('فشل في إرسال الطلب')
+    console.error('[submitPartnerRegistration] DB error code:', error.code)
+    throw new Error('فشل في إرسال الطلب، يرجى المحاولة مرة أخرى')
   }
 }

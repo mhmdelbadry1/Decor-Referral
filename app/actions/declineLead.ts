@@ -2,12 +2,18 @@
 
 import { createServerClient } from '@/lib/supabase'
 import { revalidatePath } from 'next/cache'
+import { UuidSchema } from '@/lib/validators'
 
 export type DeclineResult =
   | { success: true }
   | { success: false; reason: string }
 
 export async function declineLead(claimToken: string): Promise<DeclineResult> {
+  // Validate token shape before hitting DB
+  if (!UuidSchema.safeParse(claimToken).success) {
+    return { success: false, reason: 'invalid_token' }
+  }
+
   const supabase = createServerClient()
 
   // Resolve claimToken → lead_id + company_id
@@ -19,34 +25,16 @@ export async function declineLead(claimToken: string): Promise<DeclineResult> {
 
   if (!broadcast) return { success: false, reason: 'invalid_token' }
 
-  // Fetch current declined_by so we can append
-  const { data: lead } = await supabase
-    .from('leads')
-    .select('declined_by')
-    .eq('id', broadcast.lead_id)
-    .single()
-
-  if (!lead) return { success: false, reason: 'not_found' }
-
-  const newDeclinedBy = [
-    ...(lead.declined_by ?? []),
-    broadcast.company_id,
-  ]
-
-  // Release the lead back to the pool — only if this company currently holds it
-  const { error } = await supabase
-    .from('leads')
-    .update({
-      company_id:  null,
-      claimed_at:  null,
-      status:      'معلق',
-      declined_by: newDeclinedBy,
-    })
-    .eq('id', broadcast.lead_id)
-    .eq('company_id', broadcast.company_id)
+  // Atomic update: release lead + append company to declined_by in ONE query.
+  // Using Postgres array_append() via rpc prevents the TOCTOU race condition
+  // where two simultaneous decline calls could overwrite each other's writes.
+  const { error } = await supabase.rpc('decline_lead_atomic', {
+    p_lead_id:    broadcast.lead_id,
+    p_company_id: broadcast.company_id,
+  })
 
   if (error) {
-    console.error('declineLead error:', JSON.stringify(error, null, 2))
+    console.error('[declineLead] RPC error code:', error.code)
     return { success: false, reason: 'update_failed' }
   }
 
