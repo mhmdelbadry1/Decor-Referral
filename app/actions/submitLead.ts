@@ -17,11 +17,10 @@ export async function submitLead(data: LeadInput) {
   const { error } = await supabase.from('leads').insert({
     customer_name:  data.name,
     customer_phone: data.phone,
-    customer_email: data.email || null,
     city:           data.city,
     services:       data.services,
     budget:         data.budget,
-    status:         'جديد',
+    status:         'معلق',
   })
 
   if (error) {

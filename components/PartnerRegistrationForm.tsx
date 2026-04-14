@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useState } from 'react'
 import PhoneInput from '@/components/PhoneInput'
+import { submitPartnerRegistration } from '@/app/actions/submitPartnerRegistration'
 
 /* ── Types ────────────────────────────────────────────── */
 type CompanyData = {
@@ -85,6 +86,8 @@ function BuildingIcon() {
 export default function PartnerRegistrationForm() {
   const [step, setStep] = useState(0)
   const [submitted, setSubmitted] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
   const [data, setData] = useState<CompanyData>({
     companyName: '',
     services: [],
@@ -138,12 +141,26 @@ export default function PartnerRegistrationForm() {
     focusQuestion()
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
     if (!data.contactName.trim()) { shake(contactNameRef.current); return }
     if (!data.phoneNormalized)    { shake(phoneRef.current);       return }
-    // TODO: POST to Supabase or API route
-    console.log('Partner registration submitted:', data)
-    setSubmitted(true)
+
+    setSubmitting(true)
+    setSubmitError(null)
+    try {
+      await submitPartnerRegistration({
+        companyName:  data.companyName,
+        services:     data.services,
+        cities:       data.cities,
+        contactName:  data.contactName,
+        phone:        data.phoneNormalized,
+      })
+      setSubmitted(true)
+    } catch {
+      setSubmitError('حدث خطأ أثناء الإرسال. حاول مجدداً.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const STEP_LABELS    = ['الخطوة ١ من ٣', 'الخطوة ٢ من ٣', 'الخطوة ٣ من ٣']
@@ -419,39 +436,52 @@ export default function PartnerRegistrationForm() {
               </div>
 
               {/* ── Navigation ────────────────────────── */}
-              <div className="flex items-center justify-between mt-6 pt-4 border-t border-line">
-                {step > 0 ? (
+              <div className="flex flex-col gap-3 mt-6 pt-4 border-t border-line">
+                {submitError && (
+                  <p className="text-[0.83rem] text-center" style={{ color: 'oklch(65% 0.18 25)' }}>
+                    {submitError}
+                  </p>
+                )}
+                <div className="flex items-center justify-between">
+                  {step > 0 ? (
+                    <button
+                      type="button"
+                      onClick={goPrev}
+                      disabled={submitting}
+                      className="
+                        font-body text-[0.87rem] text-ink-faint bg-transparent
+                        border border-line px-4 py-2 rounded-full cursor-pointer
+                        transition-[color,border-color,transform] duration-[180ms]
+                        hover:text-ink hover:border-line-strong hover:scale-105
+                        active:scale-95 disabled:opacity-40
+                      "
+                      aria-label="العودة للخطوة السابقة"
+                    >
+                      → رجوع
+                    </button>
+                  ) : (
+                    <span className="invisible" aria-hidden="true">رجوع</span>
+                  )}
+
                   <button
                     type="button"
-                    onClick={goPrev}
+                    onClick={step < 2 ? goNext : handleSubmit}
+                    disabled={submitting}
                     className="
-                      font-body text-[0.87rem] text-ink-faint bg-transparent
-                      border border-line px-4 py-2 rounded-full cursor-pointer
-                      transition-[color,border-color,transform] duration-[180ms]
-                      hover:text-ink hover:border-line-strong hover:scale-105
-                      active:scale-95
+                      ms-auto bg-accent text-surface font-body text-[0.95rem] font-medium
+                      px-7 py-[11px] rounded-full border-none cursor-pointer
+                      transition-all duration-[180ms]
+                      hover:bg-accent-hover hover:-translate-y-px hover:shadow-lg
+                      active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed
+                      flex items-center gap-2
                     "
-                    aria-label="العودة للخطوة السابقة"
                   >
-                    → رجوع
+                    {submitting && (
+                      <span className="w-4 h-4 border-2 border-surface border-t-transparent rounded-full animate-spin" aria-hidden="true" />
+                    )}
+                    {step < 2 ? 'التالي ←' : submitting ? 'جاري الإرسال…' : 'إرسال الطلب ✓'}
                   </button>
-                ) : (
-                  <span className="invisible" aria-hidden="true">رجوع</span>
-                )}
-
-                <button
-                  type="button"
-                  onClick={step < 2 ? goNext : handleSubmit}
-                  className="
-                    ms-auto bg-accent text-surface font-body text-[0.95rem] font-medium
-                    px-7 py-[11px] rounded-full border-none cursor-pointer
-                    transition-all duration-[180ms]
-                    hover:bg-accent-hover hover:-translate-y-px hover:shadow-lg
-                    active:scale-95
-                  "
-                >
-                  {step < 2 ? 'التالي ←' : 'إرسال الطلب ✓'}
-                </button>
+                </div>
               </div>
             </div>
           )}
