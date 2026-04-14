@@ -18,6 +18,9 @@ export default function ClaimButton({ claimToken }: { claimToken: string }) {
       } else if (result.reason === 'already_claimed') {
         setError('عذراً، سبقتك شركة أخرى في التقاط هذا العميل.')
         router.refresh()
+      } else if (result.reason === 'banned') {
+        setError('تم سحب هذا الطلب من شركتك مسبقاً ولا يمكن التقاطه مجدداً.')
+        router.refresh()
       } else {
         setError('رابط غير صالح أو منتهي الصلاحية.')
       }

@@ -6,7 +6,7 @@
 export default function WhatsAppFab() {
   return (
     <a
-      href="#"
+      href="https://wa.me/966542197220"
       className="wa-fab"
       aria-label="تواصل معنا عبر واتساب"
       target="_blank"

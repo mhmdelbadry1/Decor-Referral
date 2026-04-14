@@ -4,7 +4,7 @@ const LINKS = [
   { href: '#about-section', label: 'من نحن' },
   { href: '#stats-section', label: 'شركاؤنا' },
   { href: '#partners-section', label: 'انضم كشريك' },
-  { href: 'https://wa.me/966500000000', label: 'واتساب' },
+  { href: 'https://wa.me/966542197220', label: 'واتساب' },
   { href: '#', label: 'سياسة الخصوصية' },
 ]
 

@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache'
 
 export type ClaimResult =
   | { success: true }
-  | { success: false; reason: 'invalid_token' | 'already_claimed' }
+  | { success: false; reason: 'invalid_token' | 'already_claimed' | 'banned' }
 
 export async function claimLead(claimToken: string): Promise<ClaimResult> {
   const supabase = createServerClient()
@@ -18,6 +18,17 @@ export async function claimLead(claimToken: string): Promise<ClaimResult> {
     .single()
 
   if (!broadcast) return { success: false, reason: 'invalid_token' }
+
+  // Reject if this company was previously removed from this lead
+  const { data: currentLead } = await supabase
+    .from('leads')
+    .select('declined_by')
+    .eq('id', broadcast.lead_id)
+    .single()
+
+  if (currentLead?.declined_by?.includes(broadcast.company_id)) {
+    return { success: false, reason: 'banned' }
+  }
 
   // Atomic claim: only succeeds if company_id is still NULL
   const { data } = await supabase

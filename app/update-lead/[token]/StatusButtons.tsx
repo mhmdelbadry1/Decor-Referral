@@ -3,6 +3,15 @@
 import { useTransition } from 'react'
 import { updateLeadStatus, type LeadStatus } from './actions'
 
+const STATUS_ORDER: LeadStatus[] = [
+  'تم التواصل',
+  'تمت الزيارة',
+  'تمت البيعة',
+  'لم يتم الاتفاق',
+]
+
+const TERMINAL = new Set<LeadStatus>(['تمت البيعة', 'لم يتم الاتفاق'])
+
 const STATUSES: { key: LeadStatus; color: string; bg: string }[] = [
   {
     key: 'تم التواصل',
@@ -35,15 +44,21 @@ export default function StatusButtons({
 }) {
   const [isPending, startTransition] = useTransition()
 
+  const currentIndex = STATUS_ORDER.indexOf(currentStatus as LeadStatus)
+  const isTerminal   = TERMINAL.has(currentStatus as LeadStatus)
+
   return (
     <div className="flex flex-col gap-3">
       {STATUSES.map(({ key, color, bg }) => {
-        const isActive = currentStatus === key
+        const isActive    = currentStatus === key
+        const buttonIndex = STATUS_ORDER.indexOf(key)
+        const isLocked    = isTerminal || buttonIndex < currentIndex
+
         return (
           <button
             key={key}
             type="button"
-            disabled={isPending}
+            disabled={isPending || isActive || isLocked}
             onClick={() => startTransition(() => updateLeadStatus(token, key))}
             className="
               min-h-[56px] px-5 py-4 rounded-lg border
