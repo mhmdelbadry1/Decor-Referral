@@ -20,16 +20,16 @@ export default async function AdminLeadsPage() {
 
     supabase
       .from('companies')
-      .select('id, name')
+      .select('id, name, rep_name, rep_whatsapp, specialty, city')
       .order('name'),
   ])
 
-  const rawLeads    = leadsResult.data    ?? []
+  const rawLeads     = leadsResult.data     ?? []
   const rawCompanies = companiesResult.data ?? []
 
   /* Flatten the nested companies relation */
   const leads: LeadRecord[] = rawLeads.map((l) => {
-    const companyRel = l.companies
+    const companyRel  = l.companies
     const companyName = Array.isArray(companyRel)
       ? (companyRel[0]?.name ?? null)
       : ((companyRel as { name: string } | null)?.name ?? null)
@@ -53,8 +53,12 @@ export default async function AdminLeadsPage() {
   })
 
   const companies: CompanyOption[] = rawCompanies.map((c) => ({
-    id  : c.id,
-    name: c.name,
+    id          : c.id,
+    name        : c.name,
+    rep_name    : c.rep_name    ?? null,
+    rep_whatsapp: c.rep_whatsapp ?? null,
+    specialty   : c.specialty   ?? [],
+    city        : c.city        ?? [],
   }))
 
   return (

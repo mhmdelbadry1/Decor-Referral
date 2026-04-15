@@ -27,7 +27,14 @@ export type LeadRecord = {
   created_at         : string
 }
 
-export type CompanyOption = { id: string; name: string }
+export type CompanyOption = {
+  id          : string
+  name        : string
+  rep_name    : string | null
+  rep_whatsapp: string | null
+  specialty   : string[]
+  city        : string[]
+}
 
 /* ── Constants ──────────────────────────────────────────── */
 // Statuses only valid when a company is assigned
@@ -119,6 +126,75 @@ function IconUserX({ size = 10 }: { size?: number }) {
   )
 }
 
+function IconPhone({ size = 11 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={IC} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.61 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 5.49 5.49l.96-.96a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+    </svg>
+  )
+}
+
+function IconPerson({ size = 11 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={IC} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+      <circle cx="12" cy="7" r="4"/>
+    </svg>
+  )
+}
+
+function IconTag({ size = 11 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={IC} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+      <line x1="7" y1="7" x2="7.01" y2="7"/>
+    </svg>
+  )
+}
+
+/* ── Company detail card ────────────────────────────────── */
+function CompanyCard({ company }: { company: CompanyOption }) {
+  const waNumber = company.rep_whatsapp?.replace(/\D/g, '') ?? ''
+  return (
+    <div
+      className="flex flex-col gap-1.5 mt-2 pt-2"
+      style={{ borderTop: '1px solid var(--color-line)' }}
+    >
+      {company.rep_name && (
+        <p className="flex items-center gap-1.5 font-body" style={{ fontSize: '0.71rem', color: 'var(--color-ink-dim)' }}>
+          <span style={{ color: 'var(--color-ink-faint)', flexShrink: 0 }}><IconPerson size={11} /></span>
+          {company.rep_name}
+        </p>
+      )}
+      {company.rep_whatsapp && (
+        <a
+          href={`https://wa.me/${waNumber}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1.5 font-body"
+          dir="ltr"
+          style={{ fontSize: '0.71rem', color: 'var(--color-success)', textDecoration: 'none' }}
+        >
+          <span style={{ flexShrink: 0 }}><IconPhone size={11} /></span>
+          {company.rep_whatsapp}
+        </a>
+      )}
+      {company.specialty.length > 0 && (
+        <p className="flex items-start gap-1.5 font-body" style={{ fontSize: '0.71rem', color: 'var(--color-ink-faint)' }}>
+          <span style={{ flexShrink: 0, marginTop: '1px' }}><IconTag size={11} /></span>
+          <span>{company.specialty.join('، ')}</span>
+        </p>
+      )}
+      {company.city.length > 0 && (
+        <p className="flex items-start gap-1.5 font-body" style={{ fontSize: '0.71rem', color: 'var(--color-ink-faint)' }}>
+          <span style={{ flexShrink: 0, marginTop: '1px' }}><IconBuilding size={11} /></span>
+          <span>{company.city.join('، ')}</span>
+        </p>
+      )}
+    </div>
+  )
+}
+
 /* ── Helpers ────────────────────────────────────────────── */
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('ar-SA', { month: 'short', day: 'numeric' })
@@ -165,6 +241,8 @@ export default function LeadsTable({
   const [companyFilter, setCompanyFilter] = useState('all')
   const [pendingId,     setPendingId]     = useState<string | null>(null)
   const [errorRow,      setErrorRow]      = useState<{ id: string; msg: string } | null>(null)
+
+  const companyMap = new Map(companies.map(c => [c.id, c]))
 
   /* Run any admin action on a lead row */
   const runAction = useCallback(
@@ -438,11 +516,14 @@ export default function LeadsTable({
                                   <option key={c.id} value={c.id}>{c.name}</option>
                                 ))}
                               </select>
-                              {hasCompany && (
-                                <p style={{ fontSize: '0.65rem', color: 'var(--color-ink-faint)' }}>
-                                  احذف الشركة لإعادتها لـ &quot;معلق&quot;
-                                </p>
-                              )}
+                              {hasCompany && (() => {
+                                const co = companyMap.get(lead.company_id!)
+                                return co ? <CompanyCard company={co} /> : (
+                                  <p style={{ fontSize: '0.65rem', color: 'var(--color-ink-faint)', marginTop: '4px' }}>
+                                    احذف الشركة لإعادتها لـ &quot;معلق&quot;
+                                  </p>
+                                )
+                              })()}
                             </div>
                           )}
                         </td>
@@ -586,6 +667,16 @@ export default function LeadsTable({
                         </select>
                       )}
                     </div>
+
+                    {/* Company details */}
+                    {hasCompany && (() => {
+                      const co = companyMap.get(lead.company_id!)
+                      return co ? (
+                        <div className="rounded-lg px-3 py-2" style={{ background: 'var(--color-bg)', border: '1px solid var(--color-line)' }}>
+                          <CompanyCard company={co} />
+                        </div>
+                      ) : null
+                    })()}
 
                     {/* Status — disabled without company */}
                     <div className="flex items-center gap-2">
