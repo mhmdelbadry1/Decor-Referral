@@ -1,11 +1,11 @@
 import { notFound } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase'
-import { updateLeadStatus, type LeadStatus } from '@/app/update-lead/[token]/actions'
 import ClaimButton from './ClaimButton'
 import DeclineButton from './DeclineButton'
 import CountdownTimer from './CountdownTimer'
 import WarningTimer from './WarningTimer'
-import StatusButtons from '@/app/update-lead/[token]/StatusButtons'
+import CopyPhoneRow from './CopyPhoneRow'
+import ClaimStatusButtons from './ClaimStatusButtons'
 
 export const dynamic = 'force-dynamic'
 
@@ -59,8 +59,8 @@ export default async function ClaimPage({
         id, customer_name, customer_phone, city,
         services,
         budget, status, company_id, claimed_at,
-        warning_sent_at, declined_by,
-        update_token, created_at,
+        warning_sent_at, declined_by, contact_verified_at,
+        created_at,
         companies ( name )
       )
     `)
@@ -81,7 +81,7 @@ export default async function ClaimPage({
     claimed_at: string | null
     warning_sent_at: string | null
     declined_by: string[] | null
-    update_token: string
+    contact_verified_at: string | null
     created_at: string
     companies: { name: string } | null
   }
@@ -148,7 +148,7 @@ export default async function ClaimPage({
         <div className="px-4 py-6 flex flex-col gap-5">
 
           {/* ── STATE C: Already taken by someone else ─── */}
-          {isClaimedByOther && (
+          {isClaimedByOther && !isBanned && (
             <div
               className="rounded-lg p-6 flex flex-col items-center text-center gap-4"
               style={{
@@ -211,12 +211,10 @@ export default async function ClaimPage({
                   className="font-display font-bold mb-2"
                   style={{ fontSize: '1.2rem', color: 'oklch(80% 0.04 20)' }}
                 >
-                  انتهت صلاحيتك على هذا الطلب
+                  لم يعد هذا الطلب متاحاً لشركتك
                 </h1>
                 <p className="font-body" style={{ fontSize: '0.88rem', color: 'oklch(55% 0.04 20)', lineHeight: 1.6 }}>
-                  تم سحب هذا العميل من شركتك بسبب انتهاء وقت التواصل أو إفادة العميل بعدم التواصل.
-                  <br />
-                  لا يمكن التقاط هذا الطلب مرة أخرى.
+                  سواء أعدته بنفسك أو تم سحبه تلقائياً، لا يمكن التقاط هذا الطلب مرة أخرى من هذا الرابط.
                 </p>
               </div>
             </div>
@@ -337,7 +335,7 @@ export default async function ClaimPage({
               )}
 
               {/* ── Normal 2-hour countdown (initial contact state only, no warning active) ── */}
-              {!isUnderWarning && lead.status === 'تم التواصل' && lead.claimed_at && (
+              {!isUnderWarning && lead.status === 'تم التواصل' && lead.claimed_at && !lead.contact_verified_at && (
                 <div
                   className="rounded-lg px-4 py-3 flex items-center justify-between gap-3"
                   style={{
@@ -361,6 +359,43 @@ export default async function ClaimPage({
                     </span>
                   </div>
                   <CountdownTimer claimedAt={lead.claimed_at} />
+                </div>
+              )}
+
+              {/* ── Contact Verified Badge ── */}
+              {lead.contact_verified_at && !isUnderWarning && (
+                <div
+                  className="rounded-lg px-4 py-3 flex items-center gap-3"
+                  style={{
+                    background: 'oklch(17% 0.05 145)',
+                    border: '1px solid oklch(38% 0.12 145)',
+                  }}
+                >
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+                    style={{ background: 'oklch(22% 0.08 145)' }}
+                    aria-hidden="true"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                      style={{ color: 'var(--color-success)' }}>
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  </div>
+                  <div className="flex flex-col gap-0.5">
+                    <span
+                      className="font-body font-semibold"
+                      style={{ fontSize: '0.85rem', color: 'var(--color-success)' }}
+                    >
+                      أكّد العميل أنك تواصلت معه
+                    </span>
+                    <span
+                      className="font-body"
+                      style={{ fontSize: '0.75rem', color: 'oklch(50% 0.07 145)' }}
+                    >
+                      تم التحقق {formatDate(lead.contact_verified_at)}
+                    </span>
+                  </div>
                 </div>
               )}
 
@@ -392,7 +427,7 @@ export default async function ClaimPage({
                 </div>
 
                 <div className="grid gap-3" style={{ gridTemplateColumns: '1fr 1fr' }}>
-                  <InfoRow label="رقم الجوال" value={lead.customer_phone} />
+                  <CopyPhoneRow phone={lead.customer_phone} />
                   <InfoRow label="المدينة" value={lead.city} />
                   <InfoRow
                     label="الخدمة"
@@ -424,8 +459,8 @@ export default async function ClaimPage({
                 >
                   تحديث الحالة
                 </h2>
-                <StatusButtons
-                  token={lead.update_token}
+                <ClaimStatusButtons
+                  claimToken={claimToken}
                   currentStatus={lead.status}
                 />
 
@@ -489,7 +524,7 @@ export default async function ClaimPage({
                 >
                   إذا كان العميل غير مناسب لشركتك يمكنك إعادته للمجموعة
                 </p>
-                <DeclineButton claimToken={claimToken} />
+                <DeclineButton claimToken={claimToken} currentStatus={lead.status} />
               </div>
             </>
           )}
