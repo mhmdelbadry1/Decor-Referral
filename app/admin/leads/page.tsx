@@ -13,7 +13,7 @@ export default async function AdminLeadsPage() {
         id, customer_name, customer_phone,
         city, services, budget, status,
         company_id, claimed_at, warning_sent_at,
-        contact_verified_at, declined_by, created_at,
+        contact_verified_at, declined_by, customer_feedback, created_at,
         companies ( name )
       `)
       .order('created_at', { ascending: false }),
@@ -48,6 +48,7 @@ export default async function AdminLeadsPage() {
       warning_sent_at    : l.warning_sent_at,
       contact_verified_at: l.contact_verified_at,
       declined_by        : l.declined_by ?? [],
+      customer_feedback  : l.customer_feedback ?? null,
       created_at         : l.created_at,
     }
   })

@@ -24,6 +24,7 @@ export type LeadRecord = {
   warning_sent_at    : string | null
   contact_verified_at: string | null
   declined_by        : string[]
+  customer_feedback  : string | null
   created_at         : string
 }
 
@@ -46,6 +47,7 @@ const STATUS_COLORS: Record<string, { color: string; bg: string }> = {
   'تمت الزيارة'   : { color: 'oklch(75% 0.14 70)',      bg: 'oklch(20% 0.06 70)' },
   'تمت البيعة'    : { color: 'var(--color-success)',    bg: 'var(--color-success-bg)' },
   'لم يتم الاتفاق': { color: 'oklch(65% 0.18 25)',      bg: 'oklch(18% 0.06 25)' },
+  'مؤرشف'         : { color: 'oklch(55% 0.04 255)',     bg: 'oklch(16% 0.03 255)' },
 }
 
 /* ── Icons ──────────────────────────────────────────────── */
@@ -204,6 +206,12 @@ function shortId(id: string) {
   return id.slice(0, 6).toUpperCase()
 }
 
+function daysSince(iso: string | null): number | null {
+  if (!iso) return null
+  const diff = Date.now() - new Date(iso).getTime()
+  return Math.floor(diff / (1000 * 60 * 60 * 24))
+}
+
 function StatusBadge({ status }: { status: string }) {
   const s = STATUS_COLORS[status] ?? STATUS_COLORS['معلق']
   return (
@@ -239,6 +247,7 @@ export default function LeadsTable({
   const [search,        setSearch]        = useState('')
   const [statusFilter,  setStatusFilter]  = useState('all')
   const [companyFilter, setCompanyFilter] = useState('all')
+  const [quickFilter,   setQuickFilter]   = useState<'none' | 'overdue' | 'feedback'>('none')
   const [pendingId,     setPendingId]     = useState<string | null>(null)
   const [errorRow,      setErrorRow]      = useState<{ id: string; msg: string } | null>(null)
 
@@ -290,9 +299,17 @@ export default function LeadsTable({
 
   /* Filtering */
   const filtered = initialLeads.filter(lead => {
-    if (statusFilter !== 'all' && lead.status !== statusFilter) return false
-    if (companyFilter === '__unassigned' && lead.company_id !== null) return false
-    if (companyFilter !== 'all' && companyFilter !== '__unassigned' && lead.company_id !== companyFilter) return false
+    // Quick filters take priority — they override status/company filters
+    if (quickFilter === 'overdue') {
+      const days = daysSince(lead.contact_verified_at)
+      if (lead.status !== 'تم التواصل' || days === null || days <= 7) return false
+    } else if (quickFilter === 'feedback') {
+      if (lead.customer_feedback !== 'العميل ينفي الزيارة') return false
+    } else {
+      if (statusFilter !== 'all' && lead.status !== statusFilter) return false
+      if (companyFilter === '__unassigned' && lead.company_id !== null) return false
+      if (companyFilter !== 'all' && companyFilter !== '__unassigned' && lead.company_id !== companyFilter) return false
+    }
     if (search) {
       const q = search.toLowerCase()
       if (
@@ -303,6 +320,13 @@ export default function LeadsTable({
     }
     return true
   })
+
+  // Counts for quick filter badges
+  const overdueCount  = initialLeads.filter(l => {
+    const d = daysSince(l.contact_verified_at)
+    return l.status === 'تم التواصل' && d !== null && d > 7
+  }).length
+  const feedbackCount = initialLeads.filter(l => l.customer_feedback === 'العميل ينفي الزيارة').length
 
   const selectBase: React.CSSProperties = {
     background  : 'var(--color-bg)',
@@ -318,6 +342,48 @@ export default function LeadsTable({
 
   return (
     <div className="flex flex-col gap-4">
+
+      {/* ── Quick Filters ────────────────────────────────── */}
+      <div className="flex flex-wrap gap-2">
+        {([
+          { key: 'overdue',  label: 'عملاء متأخرين',     count: overdueCount,  activeColor: 'oklch(75% 0.14 70)',   activeBg: 'oklch(20% 0.06 70)',   activeBorder: 'oklch(45% 0.18 70)' },
+          { key: 'feedback', label: 'شكاوى عدم الزيارة', count: feedbackCount, activeColor: 'oklch(65% 0.18 25)',   activeBg: 'oklch(18% 0.06 25)',   activeBorder: 'oklch(42% 0.18 25)' },
+        ] as const).map(({ key, label, count, activeColor, activeBg, activeBorder }) => {
+          const isActive = quickFilter === key
+          return (
+            <button
+              key={key}
+              onClick={() => setQuickFilter(isActive ? 'none' : key)}
+              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-body font-medium transition-colors duration-150"
+              style={{
+                fontSize : '0.8rem',
+                color    : isActive ? activeColor : 'var(--color-ink-faint)',
+                background: isActive ? activeBg : 'var(--color-surface)',
+                border   : `1px solid ${isActive ? activeBorder : 'var(--color-line)'}`,
+              }}
+            >
+              {label}
+              {count > 0 && (
+                <span
+                  className="rounded-full px-1.5 py-0 font-body font-bold"
+                  style={{ fontSize: '0.68rem', background: isActive ? 'oklch(30% 0.08 25)' : 'var(--color-surface-warm)', color: isActive ? activeColor : 'var(--color-ink-faint)' }}
+                >
+                  {count}
+                </span>
+              )}
+            </button>
+          )
+        })}
+        {quickFilter !== 'none' && (
+          <button
+            onClick={() => setQuickFilter('none')}
+            className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 font-body transition-colors duration-150"
+            style={{ fontSize: '0.78rem', color: 'var(--color-ink-faint)', background: 'var(--color-surface)', border: '1px solid var(--color-line)' }}
+          >
+            <IconBan size={11} /> إلغاء الفلتر
+          </button>
+        )}
+      </div>
 
       {/* ── Filter Bar ───────────────────────────────────── */}
       <div
@@ -339,13 +405,18 @@ export default function LeadsTable({
             minWidth  : '180px',
           }}
         />
-        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={selectBase}>
+        <select
+          value={statusFilter}
+          onChange={e => { setStatusFilter(e.target.value); setQuickFilter('none') }}
+          style={selectBase}
+        >
           <option value="all">كل الحالات</option>
           <option value="معلق">معلق</option>
           <option value="تم التواصل">تم التواصل</option>
           <option value="تمت الزيارة">تمت الزيارة</option>
           <option value="تمت البيعة">تمت البيعة</option>
           <option value="لم يتم الاتفاق">لم يتم الاتفاق</option>
+          <option value="مؤرشف">مؤرشف</option>
         </select>
         <select value={companyFilter} onChange={e => setCompanyFilter(e.target.value)} style={selectBase}>
           <option value="all">كل الشركات</option>
@@ -426,11 +497,14 @@ export default function LeadsTable({
                 </thead>
                 <tbody>
                   {filtered.map((lead, i) => {
-                    const isPending    = pendingId === lead.id
-                    const rowError     = errorRow?.id === lead.id ? errorRow.msg : null
-                    const hasCompany   = lead.company_id !== null
-                    const hasWarning   = !!lead.warning_sent_at
-                    const hasVerified  = !!lead.contact_verified_at
+                    const isPending       = pendingId === lead.id
+                    const rowError        = errorRow?.id === lead.id ? errorRow.msg : null
+                    const hasCompany      = lead.company_id !== null
+                    const hasWarning      = !!lead.warning_sent_at
+                    const hasVerified     = !!lead.contact_verified_at
+                    const daysWithCompany = daysSince(lead.contact_verified_at)
+                    const isOverdue       = lead.status === 'تم التواصل' && daysWithCompany !== null && daysWithCompany > 7
+                    const hasFeedbackWarn = lead.customer_feedback === 'العميل ينفي الزيارة'
 
                     return (
                       <tr
@@ -485,6 +559,11 @@ export default function LeadsTable({
                                 <IconUserX size={9} /> رُفض {lead.declined_by.length}×
                               </span>
                             )}
+                            {hasFeedbackWarn && (
+                              <span className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5" style={{ fontSize: '0.62rem', color: 'oklch(65% 0.18 25)', background: 'oklch(18% 0.06 25)' }}>
+                                <IconAlert size={9} /> ينفي الزيارة
+                              </span>
+                            )}
                           </div>
                         </td>
 
@@ -494,6 +573,14 @@ export default function LeadsTable({
                           <p className="truncate" style={{ fontSize: '0.75rem', color: 'var(--color-ink-faint)', maxWidth: '130px' }} title={lead.services.join('، ')}>
                             {lead.services.join('، ') || '—'}
                           </p>
+                          {daysWithCompany !== null && lead.status !== 'مؤرشف' && (
+                            <p
+                              className="mt-1 font-body"
+                              style={{ fontSize: '0.65rem', color: isOverdue ? 'oklch(75% 0.14 70)' : 'var(--color-ink-faint)' }}
+                            >
+                              {isOverdue ? '⚠ ' : ''}{daysWithCompany} يوم مع الشركة
+                            </p>
+                          )}
                         </td>
 
                         {/* Company dropdown */}
@@ -599,11 +686,14 @@ export default function LeadsTable({
           {/* ── Mobile Cards ──────────────────────────────── */}
           <div className="lg:hidden flex flex-col gap-3">
             {filtered.map((lead, i) => {
-              const isPending   = pendingId === lead.id
-              const rowError    = errorRow?.id === lead.id ? errorRow.msg : null
-              const hasCompany  = lead.company_id !== null
-              const hasWarning  = !!lead.warning_sent_at
-              const hasVerified = !!lead.contact_verified_at
+              const isPending       = pendingId === lead.id
+              const rowError        = errorRow?.id === lead.id ? errorRow.msg : null
+              const hasCompany      = lead.company_id !== null
+              const hasWarning      = !!lead.warning_sent_at
+              const hasVerified     = !!lead.contact_verified_at
+              const daysWithCompany = daysSince(lead.contact_verified_at)
+              const isOverdue       = lead.status === 'تم التواصل' && daysWithCompany !== null && daysWithCompany > 7
+              const hasFeedbackWarn = lead.customer_feedback === 'العميل ينفي الزيارة'
 
               return (
                 <div
@@ -639,14 +729,20 @@ export default function LeadsTable({
                     <span className="font-body" style={{ fontSize: '0.82rem', color: 'var(--color-ink-dim)' }}>{lead.city}</span>
                     <span className="font-body" style={{ fontSize: '0.78rem', color: 'var(--color-ink-faint)' }}>{formatDate(lead.created_at)}</span>
                     <span className="font-body" style={{ fontSize: '0.78rem', color: 'var(--color-ink-faint)' }}>{lead.budget || '—'}</span>
+                    {daysWithCompany !== null && lead.status !== 'مؤرشف' && (
+                      <span className="font-body" style={{ fontSize: '0.75rem', color: isOverdue ? 'oklch(75% 0.14 70)' : 'var(--color-ink-faint)' }}>
+                        {isOverdue ? '⚠ ' : ''}{daysWithCompany} يوم مع الشركة
+                      </span>
+                    )}
                   </div>
 
                   {/* State flags */}
-                  {(hasVerified || hasWarning || lead.declined_by.length > 0) && (
+                  {(hasVerified || hasWarning || lead.declined_by.length > 0 || hasFeedbackWarn) && (
                     <div className="flex gap-1.5 flex-wrap">
                       {hasVerified && <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-body" style={{ fontSize: '0.65rem', color: 'var(--color-success)', background: 'var(--color-success-bg)' }}><IconCheck size={9} /> محقق</span>}
                       {hasWarning  && <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-body" style={{ fontSize: '0.65rem', color: 'oklch(75% 0.14 70)', background: 'oklch(20% 0.06 70)' }}><IconAlert size={9} /> إنذار</span>}
                       {lead.declined_by.length > 0 && <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-body" style={{ fontSize: '0.65rem', color: 'oklch(65% 0.18 25)', background: 'oklch(18% 0.06 25)' }}><IconUserX size={9} /> رُفض {lead.declined_by.length}×</span>}
+                      {hasFeedbackWarn && <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-body" style={{ fontSize: '0.65rem', color: 'oklch(65% 0.18 25)', background: 'oklch(18% 0.06 25)' }}><IconAlert size={9} /> ينفي الزيارة</span>}
                     </div>
                   )}
 
