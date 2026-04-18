@@ -3,17 +3,10 @@
 import { useActionState, useEffect, useRef, useState } from 'react'
 import { addCompany } from '@/app/admin/actions/addCompany'
 
-const SERVICES = [
-  'ارضيات', 'اضاءة', 'دهانات', 'ديكور', 'جبس',
-  'مطابخ', 'أثاث', 'ستائر', 'حمامات', 'واجهات',
-]
-
-const CITIES = [
-  'الرياض', 'جدة', 'مكة المكرمة', 'المدينة المنورة',
-  'الدمام', 'الخبر', 'الظهران', 'القطيف', 'الأحساء',
-  'تبوك', 'بريدة', 'حائل', 'أبها', 'خميس مشيط',
-  'الطائف', 'نجران', 'جازان', 'ينبع', 'الجبيل',
-]
+type Props = {
+  cities?: string[]
+  services?: string[]
+}
 
 const inputStyle: React.CSSProperties = {
   background  : 'var(--color-bg)',
@@ -71,7 +64,7 @@ function CheckGroup({
   )
 }
 
-export default function AddCompanyPanel() {
+export default function AddCompanyPanel({ cities = [], services = [] }: Props) {
   const [open, setOpen] = useState(false)
   const [state, formAction, isPending] = useActionState(addCompany, null)
   const formRef = useRef<HTMLFormElement>(null)
@@ -209,13 +202,13 @@ export default function AddCompanyPanel() {
             {/* Row 3: Services */}
             <div>
               <FieldLabel>التخصصات * (اختر واحدة أو أكثر)</FieldLabel>
-              <CheckGroup name="services" options={SERVICES} cols={3} />
+              <CheckGroup name="services" options={services} cols={3} />
             </div>
 
             {/* Row 4: Cities */}
             <div>
               <FieldLabel>المناطق * (اختر واحدة أو أكثر)</FieldLabel>
-              <CheckGroup name="cities" options={CITIES} cols={3} />
+              <CheckGroup name="cities" options={cities} cols={3} />
             </div>
 
             {/* Error */}

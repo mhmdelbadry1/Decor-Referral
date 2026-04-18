@@ -14,15 +14,13 @@ type CompanyData = {
   phoneNormalized: string | null
 }
 
-const CITIES = [
-  'الرياض', 'جدة', 'الدمام',
-  'الخبر', 'مكة المكرمة', 'المدينة المنورة',
-]
+type Props = {
+  cities?: string[]
+  services?: string[]
+}
 
-const SERVICES = [
-  'المنيوم', 'ارضيات', 'ابواب',
-  'اثاث', 'اضاءة', 'دهانات', 'مطابخ',
-]
+const DEFAULT_CITIES   = ['الدمام', 'القطيف', 'الخبر', 'الاحساء', 'الرياض', 'جدة', 'مكة', 'المدينة']
+const DEFAULT_SERVICES = ['المنيوم', 'ارضيات', 'ابواب', 'اثاث', 'اضاءة', 'دهانات', 'مطابخ']
 
 /* ── Shake utility ─────────────────────────────────────── */
 function shake(el: HTMLElement | null) {
@@ -83,7 +81,10 @@ function BuildingIcon() {
 }
 
 /* ── Main component ────────────────────────────────────── */
-export default function PartnerRegistrationForm() {
+export default function PartnerRegistrationForm({
+  cities   = DEFAULT_CITIES,
+  services = DEFAULT_SERVICES,
+}: Props) {
   const [step, setStep] = useState(0)
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -335,7 +336,7 @@ export default function PartnerRegistrationForm() {
                         role="group"
                         aria-label="نوع الخدمات المقدمة"
                       >
-                        {SERVICES.map((s) => {
+                        {services.map((s) => {
                           const selected = data.services.includes(s)
                           return (
                             <button
@@ -369,7 +370,7 @@ export default function PartnerRegistrationForm() {
                       role="group"
                       aria-label="المدن التي تغطيها الشركة"
                     >
-                      {CITIES.map((c) => {
+                      {cities.map((c) => {
                         const selected = data.cities.includes(c)
                         return (
                           <button

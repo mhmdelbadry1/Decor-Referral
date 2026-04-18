@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useRef, useState, type ReactNode, type CSSProperties } from 'react'
+import { useCallback, useRef, useState, type ReactNode } from 'react'
 import { submitLead } from '@/app/actions/submitLead'
 import PhoneInput from '@/components/PhoneInput'
 
@@ -10,23 +10,16 @@ type FormData = {
   services: string[]
   budget: string | null
   name: string
-  phone: string          // raw input
-  phoneNormalized: string | null  // E.164 for DB
+  phone: string
+  phoneNormalized: string | null
   email: string
 }
 
-const CITIES = [
-  'الرياض', 'جدة', 'الدمام',
-  'الخبر', 'مكة المكرمة', 'المدينة المنورة',
-]
-
-const BUDGETS = [
-  'أقل من 10,000 ريال',
-  '10,000 – 25,000 ريال',
-  '25,000 – 50,000 ريال',
-  '50,000 – 100,000 ريال',
-  '100,000 – 200,000 ريال',
-]
+type Props = {
+  cities?: string[]
+  services?: string[]
+  budgets?: string[]
+}
 
 /* ── Service icons (inline SVG as components) ─────────── */
 function FloorsIcon() {
@@ -103,14 +96,33 @@ function KitchenIcon() {
   )
 }
 
-const SERVICES: { label: string; icon: ReactNode }[] = [
-  { label: 'المنيوم', icon: <AluminumIcon /> },
-  { label: 'ارضيات', icon: <FloorsIcon /> },
-  { label: 'ابواب', icon: <DoorsIcon /> },
-  { label: 'اثاث', icon: <FurnitureIcon /> },
-  { label: 'اضاءة', icon: <LightingIcon /> },
-  { label: 'دهانات', icon: <PaintIcon /> },
-  { label: 'مطابخ', icon: <KitchenIcon /> },
+function DefaultServiceIcon() {
+  return (
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="2" y="7" width="20" height="14" rx="2" />
+      <path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2" />
+    </svg>
+  )
+}
+
+const SERVICE_ICON_MAP: Record<string, ReactNode> = {
+  'المنيوم': <AluminumIcon />,
+  'ارضيات': <FloorsIcon />,
+  'ابواب':  <DoorsIcon />,
+  'اثاث':   <FurnitureIcon />,
+  'اضاءة':  <LightingIcon />,
+  'دهانات': <PaintIcon />,
+  'مطابخ':  <KitchenIcon />,
+}
+
+const DEFAULT_CITIES   = ['الدمام', 'القطيف', 'الخبر', 'الاحساء', 'الرياض', 'جدة', 'مكة', 'المدينة']
+const DEFAULT_SERVICES = ['المنيوم', 'ارضيات', 'ابواب', 'اثاث', 'اضاءة', 'دهانات', 'مطابخ']
+const DEFAULT_BUDGETS  = [
+  'أقل من 10,000 ريال',
+  '10,000 – 25,000 ريال',
+  '25,000 – 50,000 ريال',
+  '50,000 – 100,000 ريال',
+  '100,000 – 200,000 ريال',
 ]
 
 /* ── Shake utility ─────────────────────────────────────── */
@@ -130,7 +142,15 @@ function shake(el: HTMLElement | null) {
 }
 
 /* ── Main component ────────────────────────────────────── */
-export default function ConsultationForm() {
+export default function ConsultationForm({
+  cities   = DEFAULT_CITIES,
+  services: serviceLabels = DEFAULT_SERVICES,
+  budgets  = DEFAULT_BUDGETS,
+}: Props) {
+  const SERVICES = serviceLabels.map(label => ({
+    label,
+    icon: SERVICE_ICON_MAP[label] ?? <DefaultServiceIcon />,
+  }))
   const [step, setStep] = useState(0)
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -328,7 +348,7 @@ export default function ConsultationForm() {
                     role="group"
                     aria-label="اختر المدينة"
                   >
-                    {CITIES.map((city) => {
+                    {cities.map((city) => {
                       const isSelected = data.city === city
                       return (
                         <button
@@ -398,7 +418,7 @@ export default function ConsultationForm() {
                     role="radiogroup"
                     aria-label="اختر نطاق الميزانية"
                   >
-                    {BUDGETS.map((budget) => {
+                    {budgets.map((budget) => {
                       const selected = data.budget === budget
                       return (
                         <button

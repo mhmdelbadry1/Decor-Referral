@@ -3,7 +3,7 @@
 import { revalidatePath }    from 'next/cache'
 import { createServerClient } from '@/lib/supabase'
 
-const VALID_STATUSES = ['معلق', 'تم التواصل', 'تمت الزيارة', 'تمت البيعة', 'لم يتم الاتفاق'] as const
+const VALID_STATUSES = ['معلق', 'تم التواصل', 'تمت الزيارة', 'تمت البيعة', 'لم يتم الاتفاق', 'مؤرشف'] as const
 
 function refreshPaths() {
   revalidatePath('/admin/leads')
@@ -17,6 +17,18 @@ export async function updateLeadStatusAdmin(leadId: string, status: string) {
   }
 
   const supabase = createServerClient()
+
+  if (status === 'معلق') {
+    const { data: lead } = await supabase
+      .from('leads')
+      .select('company_id')
+      .eq('id', leadId)
+      .single()
+    if (lead?.company_id) {
+      return { error: 'لا يمكن تعيين الحالة "معلق" وهناك شركة مُعيَّنة — احذف الشركة أولاً' }
+    }
+  }
+
   const { error } = await supabase
     .from('leads')
     .update({ status })
@@ -36,8 +48,9 @@ export async function reassignLeadAdmin(leadId: string, companyId: string | null
   const supabase = createServerClient()
 
   const updates: Record<string, unknown> = {
-    company_id     : companyId,
-    warning_sent_at: null,
+    company_id           : companyId,
+    warning_sent_at      : null,
+    contact_verified_at  : null,
   }
 
   if (companyId) {
@@ -65,10 +78,11 @@ export async function releaseLeadAdmin(leadId: string) {
   const { error } = await supabase
     .from('leads')
     .update({
-      company_id     : null,
-      status         : 'معلق',
-      claimed_at     : null,
-      warning_sent_at: null,
+      company_id          : null,
+      status              : 'معلق',
+      claimed_at          : null,
+      warning_sent_at     : null,
+      contact_verified_at : null,
     })
     .eq('id', leadId)
 

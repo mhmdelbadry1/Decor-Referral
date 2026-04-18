@@ -39,7 +39,7 @@ export type CompanyOption = {
 
 /* ── Constants ──────────────────────────────────────────── */
 // Statuses only valid when a company is assigned
-const ASSIGNED_STATUSES = ['تم التواصل', 'تمت الزيارة', 'تمت البيعة', 'لم يتم الاتفاق']
+const ASSIGNED_STATUSES = ['تم التواصل', 'تمت الزيارة', 'تمت البيعة', 'لم يتم الاتفاق', 'مؤرشف']
 
 const STATUS_COLORS: Record<string, { color: string; bg: string }> = {
   'معلق'          : { color: 'var(--color-ink-faint)',  bg: 'var(--color-surface-warm)' },
@@ -344,15 +344,22 @@ export default function LeadsTable({
     <div className="flex flex-col gap-4">
 
       {/* ── Quick Filters ────────────────────────────────── */}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <span
+          className="font-body"
+          style={{ fontSize: '0.72rem', color: 'var(--color-ink-faint)', letterSpacing: '0.06em', textTransform: 'uppercase', flexShrink: 0 }}
+        >
+          تنبيهات:
+        </span>
         {([
-          { key: 'overdue',  label: 'عملاء متأخرين',     count: overdueCount,  activeColor: 'oklch(75% 0.14 70)',   activeBg: 'oklch(20% 0.06 70)',   activeBorder: 'oklch(45% 0.18 70)' },
-          { key: 'feedback', label: 'شكاوى عدم الزيارة', count: feedbackCount, activeColor: 'oklch(65% 0.18 25)',   activeBg: 'oklch(18% 0.06 25)',   activeBorder: 'oklch(42% 0.18 25)' },
-        ] as const).map(({ key, label, count, activeColor, activeBg, activeBorder }) => {
+          { key: 'overdue',  label: 'عملاء متأخرين',     title: 'طلبات في حالة "تم التواصل" منذ أكثر من ٧ أيام دون تقدم — تحتاج متابعة عاجلة',     count: overdueCount,  activeColor: 'oklch(75% 0.14 70)',   activeBg: 'oklch(20% 0.06 70)',   activeBorder: 'oklch(45% 0.18 70)' },
+          { key: 'feedback', label: 'شكاوى عدم الزيارة', title: 'عملاء أبلغوا أن الشركة لم تزرهم رغم أن حالة طلبهم تقول خلاف ذلك — يستوجب التحقق', count: feedbackCount, activeColor: 'oklch(65% 0.18 25)',   activeBg: 'oklch(18% 0.06 25)',   activeBorder: 'oklch(42% 0.18 25)' },
+        ] as const).map(({ key, label, title, count, activeColor, activeBg, activeBorder }) => {
           const isActive = quickFilter === key
           return (
             <button
               key={key}
+              title={title}
               onClick={() => setQuickFilter(isActive ? 'none' : key)}
               className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-body font-medium transition-colors duration-150"
               style={{
@@ -407,8 +414,10 @@ export default function LeadsTable({
         />
         <select
           value={statusFilter}
+          disabled={quickFilter !== 'none'}
           onChange={e => { setStatusFilter(e.target.value); setQuickFilter('none') }}
-          style={selectBase}
+          style={{ ...selectBase, opacity: quickFilter !== 'none' ? 0.4 : 1, cursor: quickFilter !== 'none' ? 'not-allowed' : 'pointer' }}
+          title={quickFilter !== 'none' ? 'ألغِ الفلتر السريع أولاً' : undefined}
         >
           <option value="all">كل الحالات</option>
           <option value="معلق">معلق</option>
@@ -418,7 +427,13 @@ export default function LeadsTable({
           <option value="لم يتم الاتفاق">لم يتم الاتفاق</option>
           <option value="مؤرشف">مؤرشف</option>
         </select>
-        <select value={companyFilter} onChange={e => setCompanyFilter(e.target.value)} style={selectBase}>
+        <select
+          value={companyFilter}
+          disabled={quickFilter !== 'none'}
+          onChange={e => setCompanyFilter(e.target.value)}
+          style={{ ...selectBase, opacity: quickFilter !== 'none' ? 0.4 : 1, cursor: quickFilter !== 'none' ? 'not-allowed' : 'pointer' }}
+          title={quickFilter !== 'none' ? 'ألغِ الفلتر السريع أولاً' : undefined}
+        >
           <option value="all">كل الشركات</option>
           <option value="__unassigned">بدون شركة</option>
           {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -434,13 +449,13 @@ export default function LeadsTable({
         style={{ background: 'oklch(16% 0.04 255)', border: '1px solid var(--color-line)' }}
       >
         <p className="font-body w-full mb-0.5" style={{ fontSize: '0.7rem', color: 'var(--color-ink-faint)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-          كيفية التعديل
+          قواعد التعديل — اقرأها مرة واحدة
         </p>
         {([
-          { icon: <IconBuilding size={13} />, text: 'اختر شركة → يصبح "تم التواصل" تلقائياً' },
-          { icon: <IconRotate   size={13} />, text: 'احذف الشركة → يعود "معلق" تلقائياً' },
-          { icon: <IconRules    size={13} />, text: 'الحالة تتغير فقط إذا كانت هناك شركة مُعيَّنة' },
-          { icon: <IconBan      size={13} />, text: '"مسح الرفض" يسمح للشركات المرفوضة بالالتقاط مجدداً' },
+          { icon: <IconBuilding size={13} />, text: 'اختيار شركة يُسجّل التواصل تلقائياً ويضبط الحالة' },
+          { icon: <IconRotate   size={13} />, text: 'حذف الشركة يُعيد الطلب لـ «معلق» ويفتحه لشركة أخرى' },
+          { icon: <IconRules    size={13} />, text: 'لا يمكن تغيير الحالة إلا بعد تعيين شركة — وهذا مقصود' },
+          { icon: <IconBan      size={13} />, text: '«مسح الرفض» يجعل الطلب مرئياً من جديد للشركات التي رفضته' },
         ] as { icon: React.ReactNode; text: string }[]).map(({ icon, text }) => (
           <p key={text} className="font-body flex items-center gap-1.5" style={{ fontSize: '0.78rem', color: 'var(--color-ink-faint)' }}>
             <span className="shrink-0 opacity-60">{icon}</span><span>{text}</span>
@@ -454,7 +469,10 @@ export default function LeadsTable({
           style={{ background: 'var(--color-surface)', border: '1px solid var(--color-line)' }}
         >
           <p className="font-body" style={{ color: 'var(--color-ink-faint)', fontSize: '0.9rem' }}>
-            لا توجد نتائج مطابقة
+            لا يوجد طلب يطابق الفلتر الحالي
+          </p>
+          <p className="font-body mt-1" style={{ color: 'var(--color-ink-faint)', fontSize: '0.78rem', opacity: 0.6 }}>
+            جرّب تغيير الحالة أو الشركة، أو ألغِ الفلتر السريع
           </p>
         </div>
       ) : (
@@ -502,8 +520,8 @@ export default function LeadsTable({
                     const hasCompany      = lead.company_id !== null
                     const hasWarning      = !!lead.warning_sent_at
                     const hasVerified     = !!lead.contact_verified_at
-                    const daysWithCompany = daysSince(lead.contact_verified_at)
-                    const isOverdue       = lead.status === 'تم التواصل' && daysWithCompany !== null && daysWithCompany > 7
+                    const daysSinceVerified = daysSince(lead.contact_verified_at)
+                    const isOverdue       = lead.status === 'تم التواصل' && daysSinceVerified !== null && daysSinceVerified > 7
                     const hasFeedbackWarn = lead.customer_feedback === 'العميل ينفي الزيارة'
 
                     return (
@@ -573,12 +591,12 @@ export default function LeadsTable({
                           <p className="truncate" style={{ fontSize: '0.75rem', color: 'var(--color-ink-faint)', maxWidth: '130px' }} title={lead.services.join('، ')}>
                             {lead.services.join('، ') || '—'}
                           </p>
-                          {daysWithCompany !== null && lead.status !== 'مؤرشف' && (
+                          {daysSinceVerified !== null && lead.status !== 'مؤرشف' && (
                             <p
                               className="mt-1 font-body"
                               style={{ fontSize: '0.65rem', color: isOverdue ? 'oklch(75% 0.14 70)' : 'var(--color-ink-faint)' }}
                             >
-                              {isOverdue ? '⚠ ' : ''}{daysWithCompany} يوم مع الشركة
+                              {isOverdue ? '⚠ ' : ''}{daysSinceVerified} يوم منذ التحقق
                             </p>
                           )}
                         </td>
@@ -691,8 +709,8 @@ export default function LeadsTable({
               const hasCompany      = lead.company_id !== null
               const hasWarning      = !!lead.warning_sent_at
               const hasVerified     = !!lead.contact_verified_at
-              const daysWithCompany = daysSince(lead.contact_verified_at)
-              const isOverdue       = lead.status === 'تم التواصل' && daysWithCompany !== null && daysWithCompany > 7
+              const daysSinceVerified = daysSince(lead.contact_verified_at)
+              const isOverdue       = lead.status === 'تم التواصل' && daysSinceVerified !== null && daysSinceVerified > 7
               const hasFeedbackWarn = lead.customer_feedback === 'العميل ينفي الزيارة'
 
               return (
@@ -729,9 +747,9 @@ export default function LeadsTable({
                     <span className="font-body" style={{ fontSize: '0.82rem', color: 'var(--color-ink-dim)' }}>{lead.city}</span>
                     <span className="font-body" style={{ fontSize: '0.78rem', color: 'var(--color-ink-faint)' }}>{formatDate(lead.created_at)}</span>
                     <span className="font-body" style={{ fontSize: '0.78rem', color: 'var(--color-ink-faint)' }}>{lead.budget || '—'}</span>
-                    {daysWithCompany !== null && lead.status !== 'مؤرشف' && (
+                    {daysSinceVerified !== null && lead.status !== 'مؤرشف' && (
                       <span className="font-body" style={{ fontSize: '0.75rem', color: isOverdue ? 'oklch(75% 0.14 70)' : 'var(--color-ink-faint)' }}>
-                        {isOverdue ? '⚠ ' : ''}{daysWithCompany} يوم مع الشركة
+                        {isOverdue ? '⚠ ' : ''}{daysSinceVerified} يوم منذ التحقق
                       </span>
                     )}
                   </div>

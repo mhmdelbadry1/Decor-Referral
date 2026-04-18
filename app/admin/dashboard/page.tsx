@@ -9,6 +9,8 @@ import TrustLeaderboard,   { CompanyLeaderboardRow }  from './components/TrustLe
 import RecentLeads,        { RecentLeadRow }           from './components/RecentLeads'
 import LogoutButton                                    from './components/LogoutButton'
 import AddCompanyPanel                                 from './components/AddCompanyPanel'
+import SettingsPanel                                   from './components/SettingsPanel'
+import { getFormConfig }                               from '@/lib/getFormConfig'
 
 export const dynamic = 'force-dynamic'
 
@@ -62,8 +64,8 @@ type BroadcastRow = {
 export default async function AdminDashboardPage() {
   const supabase = createServerClient()
 
-  /* 3 parallel queries */
-  const [leadsResult, companiesResult, broadcastsResult] = await Promise.all([
+  /* 4 parallel queries */
+  const [leadsResult, companiesResult, broadcastsResult, formConfig] = await Promise.all([
     supabase
       .from('leads')
       .select('id, customer_name, city, services, budget, status, company_id, claimed_at, contact_verified_at, created_at')
@@ -76,6 +78,8 @@ export default async function AdminDashboardPage() {
     supabase
       .from('lead_broadcasts')
       .select('lead_id, company_id'),
+
+    getFormConfig(),
   ])
 
   const leads      = (leadsResult.data     ?? []) as LeadRow[]
@@ -187,7 +191,16 @@ export default async function AdminDashboardPage() {
 
       {/* ── Content ────────────────────────────────────── */}
       <div className="flex flex-col gap-6">
-        <AddCompanyPanel />
+        <SettingsPanel
+          cities={formConfig.cities}
+          services={formConfig.services}
+          budgets={formConfig.budgets}
+        />
+
+        <AddCompanyPanel
+          cities={formConfig.cities}
+          services={formConfig.services}
+        />
 
         <KpiGrid data={kpiData} />
 
