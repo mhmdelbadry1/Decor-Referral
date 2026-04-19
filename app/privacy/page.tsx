@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 }
 
 const LAST_UPDATED = '١ يناير ٢٠٢٥'
-const CONTACT_EMAIL = 'info@moalqdahy.com'
+const CONTACT_EMAIL = 'modi432116@gmail.com'
 const CONTACT_WHATSAPP = 'https://wa.me/966542197220'
 
 export default function PrivacyPage() {
