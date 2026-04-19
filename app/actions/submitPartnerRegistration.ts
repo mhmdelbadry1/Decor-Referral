@@ -1,10 +1,17 @@
 'use server'
 
 import { createServerClient } from '@/lib/supabase'
-import { PartnerSchema } from '@/lib/validators'
+import { buildPartnerSchema } from '@/lib/validators'
+import { getFormConfig }      from '@/lib/getFormConfig'
 
 export async function submitPartnerRegistration(data: unknown) {
-  // Runtime validation — prevents bots and malformed submissions
+  // Fetch live config so validation always matches admin-configured options
+  const config = await getFormConfig()
+  const PartnerSchema = buildPartnerSchema({
+    cities  : config.cities,
+    services: config.services,
+  })
+
   const parsed = PartnerSchema.safeParse(data)
   if (!parsed.success) {
     const firstError = parsed.error.issues[0]?.message ?? 'بيانات غير صحيحة'
@@ -27,3 +34,4 @@ export async function submitPartnerRegistration(data: unknown) {
     throw new Error('فشل في إرسال الطلب، يرجى المحاولة مرة أخرى')
   }
 }
+

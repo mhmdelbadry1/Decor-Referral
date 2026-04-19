@@ -5,7 +5,7 @@ const LINKS = [
   { href: '#stats-section', label: 'شركاؤنا' },
   { href: '#partners-section', label: 'انضم كشريك' },
   { href: 'https://wa.me/966542197220', label: 'واتساب' },
-  { href: '#', label: 'سياسة الخصوصية' },
+  { href: '/privacy', label: 'سياسة الخصوصية' },
 ]
 
 const IconTikTok = () => (

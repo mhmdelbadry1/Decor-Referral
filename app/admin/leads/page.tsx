@@ -78,7 +78,7 @@ export default async function AdminLeadsPage() {
           className="font-body mt-1"
           style={{ fontSize: '0.82rem', color: 'var(--color-ink-faint)' }}
         >
-          {leads.length} طلب · تحكم كامل في الحالات والتعيينات
+          {leads.length} طلب واصل حتى الآن · عيِّن شركة لكل طلب وتتبع حالته خطوة بخطوة
         </p>
       </div>
 

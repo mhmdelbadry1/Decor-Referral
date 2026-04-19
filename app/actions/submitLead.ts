@@ -1,10 +1,14 @@
 'use server'
 
 import { createServerClient } from '@/lib/supabase'
-import { LeadSchema } from '@/lib/validators'
+import { buildLeadSchema }    from '@/lib/validators'
+import { getFormConfig }      from '@/lib/getFormConfig'
 
 export async function submitLead(data: unknown) {
-  // Runtime validation — TypeScript types are erased at runtime
+  // Fetch live config so validation always matches the admin-configured options
+  const config = await getFormConfig()
+  const LeadSchema = buildLeadSchema(config)
+
   const parsed = LeadSchema.safeParse(data)
   if (!parsed.success) {
     const firstError = parsed.error.issues[0]?.message ?? 'بيانات غير صحيحة'

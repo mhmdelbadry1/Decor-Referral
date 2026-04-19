@@ -2,7 +2,8 @@
 
 import { revalidatePath }    from 'next/cache'
 import { createServerClient } from '@/lib/supabase'
-import { PartnerSchema }     from '@/lib/validators'
+import { buildPartnerSchema } from '@/lib/validators'
+import { getFormConfig }      from '@/lib/getFormConfig'
 
 export type AddCompanyState = {
   success?: true
@@ -13,6 +14,10 @@ export async function addCompany(
   _prev: AddCompanyState | null,
   formData: FormData,
 ): Promise<AddCompanyState> {
+  // Fetch live config from DB so validation always matches
+  // whatever cities/services the admin has configured
+  const config = await getFormConfig()
+
   const raw = {
     companyName : formData.get('companyName'),
     contactName : formData.get('contactName'),
@@ -20,6 +25,11 @@ export async function addCompany(
     services    : formData.getAll('services'),
     cities      : formData.getAll('cities'),
   }
+
+  const PartnerSchema = buildPartnerSchema({
+    cities  : config.cities,
+    services: config.services,
+  })
 
   const parsed = PartnerSchema.safeParse(raw)
   if (!parsed.success) {
