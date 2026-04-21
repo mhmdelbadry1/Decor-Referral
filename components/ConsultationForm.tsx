@@ -210,8 +210,8 @@ export default function ConsultationForm({
         email:    data.email,
       })
       setSubmitted(true)
-    } catch {
-      setSubmitError('حدث خطأ أثناء الإرسال. حاول مجدداً.')
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'حدث خطأ أثناء الإرسال. حاول مجدداً.')
     } finally {
       setSubmitting(false)
     }

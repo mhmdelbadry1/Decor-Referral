@@ -18,6 +18,23 @@ export async function submitLead(data: unknown) {
   const { name, phone, city, services, budget } = parsed.data
   const supabase = createServerClient()
 
+  // Reject only if same phone + same city + overlapping services is already active
+  const { data: activeLeads } = await supabase
+    .from('leads')
+    .select('city, services')
+    .eq('customer_phone', phone)
+    .in('status', ['معلق', 'تم التواصل', 'تمت الزيارة'])
+
+  const isDuplicate = (activeLeads ?? []).some(
+    lead =>
+      lead.city === city &&
+      (lead.services as string[]).some(s => services.includes(s))
+  )
+
+  if (isDuplicate) {
+    throw new Error('لقد استلمنا طلبك لهذه الخدمة في نفس المدينة بالفعل — سنتواصل معك قريباً عبر واتساب.')
+  }
+
   const { error } = await supabase.from('leads').insert({
     customer_name:  name,
     customer_phone: phone,
