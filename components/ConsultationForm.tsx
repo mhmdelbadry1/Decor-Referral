@@ -201,7 +201,7 @@ export default function ConsultationForm({
     setSubmitting(true)
     setSubmitError(null)
     try {
-      await submitLead({
+      const result = await submitLead({
         city:     data.city!,
         services: data.services,
         budget:   data.budget!,
@@ -209,9 +209,13 @@ export default function ConsultationForm({
         phone:    data.phoneNormalized,
         email:    data.email,
       })
-      setSubmitted(true)
-    } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : 'حدث خطأ أثناء الإرسال. حاول مجدداً.')
+      if (result?.error) {
+        setSubmitError(result.error)
+      } else {
+        setSubmitted(true)
+      }
+    } catch {
+      setSubmitError('حدث خطأ أثناء الإرسال. حاول مجدداً.')
     } finally {
       setSubmitting(false)
     }

@@ -149,14 +149,18 @@ export default function PartnerRegistrationForm({
     setSubmitting(true)
     setSubmitError(null)
     try {
-      await submitPartnerRegistration({
+      const result = await submitPartnerRegistration({
         companyName:  data.companyName,
         services:     data.services,
         cities:       data.cities,
         contactName:  data.contactName,
         phone:        data.phoneNormalized,
       })
-      setSubmitted(true)
+      if (result?.error) {
+        setSubmitError(result.error)
+      } else {
+        setSubmitted(true)
+      }
     } catch {
       setSubmitError('حدث خطأ أثناء الإرسال. حاول مجدداً.')
     } finally {
