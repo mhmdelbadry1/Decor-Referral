@@ -5,7 +5,6 @@ import Process from '@/components/Process'
 import ConsultationForm from '@/components/ConsultationForm'
 import PartnerRegistrationForm from '@/components/PartnerRegistrationForm'
 import Footer from '@/components/Footer'
-import WhatsAppFab from '@/components/WhatsAppFab'
 import { getFormConfig } from '@/lib/getFormConfig'
 
 export default async function LandingPage() {
@@ -31,7 +30,6 @@ export default async function LandingPage() {
       </main>
 
       <Footer />
-      <WhatsAppFab />
     </>
   )
 }
