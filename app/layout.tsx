@@ -31,6 +31,9 @@ export const metadata: Metadata = {
   title: 'مستشار الديكور — احصل على أفضل شركات التشطيب',
   description:
     'نربطك بأفضل مقاولي التشطيب الموثوقين في مدينتك — بناءً على ميزانيتك وخدمتك المطلوبة. مجاناً تماماً.',
+  other: {
+    'facebook-domain-verification': 'tica7vslqnjy0o0i6x5sfgo87vkjkf',
+  },
 }
 
 export default function RootLayout({
