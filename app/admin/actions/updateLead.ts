@@ -47,21 +47,33 @@ export async function updateLeadStatusAdmin(leadId: string, status: string) {
 export async function reassignLeadAdmin(leadId: string, companyId: string | null) {
   const supabase = createServerClient()
 
-  const updates: Record<string, unknown> = {
-    company_id           : companyId,
-    warning_sent_at      : null,
-    contact_verified_at  : null,
+  // n8n's re-broadcast condition requires old.status ≠ 'معلق'.
+  // If the lead is already معلق (e.g. admin switching company mid-flow),
+  // bump it through مؤرشف first — n8n has no handler for that status so
+  // it's a silent pass-through. The next update to معلق then satisfies
+  // old ≠ معلق and the broadcast fires correctly.
+  const { data: current } = await supabase
+    .from('leads')
+    .select('status')
+    .eq('id', leadId)
+    .single()
+
+  if (current?.status === 'معلق') {
+    await supabase.from('leads').update({ status: 'مؤرشف' }).eq('id', leadId)
   }
 
-  if (companyId) {
-    updates.status     = 'تم التواصل'
-    updates.claimed_at = new Date().toISOString()
-  } else {
-    updates.status     = 'معلق'
-    updates.claimed_at = null
-  }
+  const { error } = await supabase
+    .from('leads')
+    .update({
+      company_id          : companyId,
+      status              : 'معلق',
+      claimed_at          : null,
+      warning_sent_at     : null,
+      contact_verified_at : null,
+      customer_feedback   : null,
+    })
+    .eq('id', leadId)
 
-  const { error } = await supabase.from('leads').update(updates).eq('id', leadId)
   if (error) return { error: error.message }
   refreshPaths()
   return { success: true }
@@ -107,8 +119,8 @@ export async function clearDeclinedListAdmin(leadId: string) {
   return { success: true }
 }
 
-export const VALID_RATINGS = ['ممتاز', 'جيد', 'يحتاج تحسين'] as const
-export type SaleRating = typeof VALID_RATINGS[number]
+const VALID_RATINGS = ['ممتاز', 'جيد', 'يحتاج تحسين'] as const
+type SaleRating = typeof VALID_RATINGS[number]
 
 /** Set or clear the sale_rating on a lead. Pass null to remove the rating. */
 export async function updateLeadRatingAdmin(leadId: string, rating: string | null) {

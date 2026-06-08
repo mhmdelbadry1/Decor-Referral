@@ -16,15 +16,15 @@ test.describe('Admin leads page', () => {
     const search = page.getByPlaceholder(/بحث/i)
     await expect(search).toBeVisible()
     await search.fill('test')
-    // Results count should update (or show 0 طلب)
-    await expect(page.getByText(/\d+ طلب/)).toBeVisible()
+    // Results count should update (or show 0 طلب) — target the count span specifically
+    await expect(page.locator('span.whitespace-nowrap').filter({ hasText: /طلب/ })).toBeVisible()
     await search.fill('')
   })
 
   test('status filter dropdown works', async ({ page }) => {
     const statusSelect = page.locator('select').filter({ hasText: 'كل الحالات' })
     await statusSelect.selectOption('تمت البيعة')
-    await expect(page.getByText(/\d+ طلب/)).toBeVisible()
+    await expect(page.locator('span.whitespace-nowrap').filter({ hasText: /طلب/ })).toBeVisible()
     await statusSelect.selectOption('all')
   })
 
@@ -32,7 +32,7 @@ test.describe('Admin leads page', () => {
     const companySelect = page.locator('select').filter({ hasText: 'كل الشركات' })
     await expect(companySelect).toBeVisible()
     await companySelect.selectOption('__unassigned')
-    await expect(page.getByText(/\d+ طلب/)).toBeVisible()
+    await expect(page.locator('span.whitespace-nowrap').filter({ hasText: /طلب/ })).toBeVisible()
     await companySelect.selectOption('all')
   })
 
@@ -66,7 +66,7 @@ test.describe('Admin leads page', () => {
     await select.selectOption('ممتاز')
     await page.waitForTimeout(1500)  // wait for server action
     // No error should appear near the row
-    const errorMsg = page.getByText(/خطأ غير متوقع/)
+    const errorMsg = page.getByText(/خطأ غير متوقع/).first()
     await expect(errorMsg).not.toBeVisible()
 
     // Reset to original

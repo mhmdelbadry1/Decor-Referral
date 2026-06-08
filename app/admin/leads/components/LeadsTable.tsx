@@ -31,12 +31,13 @@ export type LeadRecord = {
 }
 
 export type CompanyOption = {
-  id          : string
-  name        : string
-  rep_name    : string | null
-  rep_whatsapp: string | null
-  specialty   : string[]
-  city        : string[]
+  id            : string
+  name          : string
+  rep_name      : string | null
+  rep_whatsapp  : string | null
+  specialty     : string[]
+  city          : string[]
+  is_blacklisted: boolean
 }
 
 /* ── Constants ──────────────────────────────────────────── */
@@ -240,6 +241,69 @@ function Spinner() {
       aria-hidden="true"
       style={{ color: 'var(--color-ink-faint)' }}
     />
+  )
+}
+
+/* ── Company matching (mirrors n8n SQL logic) ───────────── */
+function partitionCompanies(lead: LeadRecord, companies: CompanyOption[]) {
+  const available: CompanyOption[] = []
+  const declined : CompanyOption[] = []
+
+  for (const c of companies) {
+    if (c.is_blacklisted) continue
+    const cityMatch     = c.city.includes(lead.city)
+    const serviceMatch  = c.specialty.some(s => lead.services.includes(s))
+    if (!cityMatch || !serviceMatch) continue
+
+    if (lead.declined_by.includes(c.id)) {
+      declined.push(c)
+    } else {
+      available.push(c)
+    }
+  }
+
+  return { available, declined }
+}
+
+/* ── Company dropdown options ───────────────────────────── */
+function CompanyOptions({ lead, companies }: { lead: LeadRecord; companies: CompanyOption[] }) {
+  const { available, declined } = partitionCompanies(lead, companies)
+
+  // Always include the currently assigned company even if it doesn't match filters
+  const assignedNotListed =
+    lead.company_id &&
+    !available.find(c => c.id === lead.company_id) &&
+    !declined.find(c => c.id === lead.company_id)
+  const assignedCompany = assignedNotListed
+    ? companies.find(c => c.id === lead.company_id)
+    : null
+
+  return (
+    <>
+      <option value="">— بدون شركة —</option>
+
+      {available.length > 0 && (
+        <optgroup label="شركات متاحة">
+          {available.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </optgroup>
+      )}
+
+      {declined.length > 0 && (
+        <optgroup label="رفضت سابقاً (تحتاج مسح الرفض)">
+          {declined.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </optgroup>
+      )}
+
+      {assignedCompany && (
+        <optgroup label="المُعيَّنة حالياً">
+          <option value={assignedCompany.id}>{assignedCompany.name}</option>
+        </optgroup>
+      )}
+
+      {available.length === 0 && declined.length === 0 && !assignedCompany && (
+        <option disabled value="">لا توجد شركات مطابقة</option>
+      )}
+    </>
   )
 }
 
@@ -468,8 +532,8 @@ export default function LeadsTable({
           قواعد التعديل — اقرأها مرة واحدة
         </p>
         {([
-          { icon: <IconBuilding size={13} />, text: 'اختيار شركة يُسجّل التواصل تلقائياً ويضبط الحالة' },
-          { icon: <IconRotate   size={13} />, text: 'حذف الشركة يُعيد الطلب لـ «معلق» ويفتحه لشركة أخرى' },
+          { icon: <IconBuilding size={13} />, text: 'اختيار شركة يُعيد الطلب لـ «معلق» ويُطلق إشعار واتساب للشركة لتبدأ من البداية' },
+          { icon: <IconRotate   size={13} />, text: 'حذف الشركة يُعيد الطلب لـ «معلق» ويفتحه لكل الشركات المتاحة' },
           { icon: <IconRules    size={13} />, text: 'لا يمكن تغيير الحالة إلا بعد تعيين شركة — وهذا مقصود' },
           { icon: <IconBan      size={13} />, text: '«مسح الرفض» يجعل الطلب مرئياً من جديد للشركات التي رفضته' },
         ] as { icon: React.ReactNode; text: string }[]).map(({ icon, text }) => (
@@ -633,10 +697,7 @@ export default function LeadsTable({
                                   minWidth  : '140px',
                                 }}
                               >
-                                <option value="">— بدون شركة —</option>
-                                {companies.map(c => (
-                                  <option key={c.id} value={c.id}>{c.name}</option>
-                                ))}
+                                <CompanyOptions lead={lead} companies={companies} />
                               </select>
                               {hasCompany && (() => {
                                 const co = companyMap.get(lead.company_id!)
@@ -675,7 +736,7 @@ export default function LeadsTable({
                               </select>
                               {!hasCompany && (
                                 <p style={{ fontSize: '0.65rem', color: 'var(--color-ink-faint)' }}>
-                                  يتطلب شركة مُعيَّنة
+                                  عيِّن شركة أولاً — سيُعاد الطلب لـ «معلق» وتُرسل إشعارات واتساب
                                 </p>
                               )}
                             </div>
@@ -814,8 +875,7 @@ export default function LeadsTable({
                           onChange={e => handleCompanyChange(lead, e.target.value)}
                           style={{ ...selectBase, flex: 1 }}
                         >
-                          <option value="">— بدون شركة —</option>
-                          {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                          <CompanyOptions lead={lead} companies={companies} />
                         </select>
                       )}
                     </div>

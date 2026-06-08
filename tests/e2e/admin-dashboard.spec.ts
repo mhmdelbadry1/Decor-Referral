@@ -52,7 +52,8 @@ test.describe('Admin dashboard', () => {
     test.skip(count === 0, 'no companies yet')
 
     await editButtons.first().click()
-    await expect(page.getByText(/اسم الشركة/i).last()).toBeVisible()
+    // Wait for the inline edit form to appear (it's a toggled section)
+    await expect(page.locator('input[name="companyName"]').first()).toBeVisible()
   })
 
   test('company delete button shows confirmation', async ({ page }) => {

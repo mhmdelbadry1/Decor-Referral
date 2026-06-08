@@ -20,7 +20,7 @@ export default async function AdminLeadsPage() {
 
     supabase
       .from('companies')
-      .select('id, name, rep_name, rep_whatsapp, specialty, city')
+      .select('id, name, rep_name, rep_whatsapp, specialty, city, is_blacklisted')
       .order('name'),
   ])
 
@@ -55,12 +55,13 @@ export default async function AdminLeadsPage() {
   })
 
   const companies: CompanyOption[] = rawCompanies.map((c) => ({
-    id          : c.id,
-    name        : c.name,
-    rep_name    : c.rep_name    ?? null,
-    rep_whatsapp: c.rep_whatsapp ?? null,
-    specialty   : c.specialty   ?? [],
-    city        : c.city        ?? [],
+    id            : c.id,
+    name          : c.name,
+    rep_name      : c.rep_name    ?? null,
+    rep_whatsapp  : c.rep_whatsapp ?? null,
+    specialty     : c.specialty   ?? [],
+    city          : c.city        ?? [],
+    is_blacklisted: c.is_blacklisted ?? false,
   }))
 
   return (

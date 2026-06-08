@@ -19,7 +19,7 @@ test.describe('Admin login', () => {
     await page.getByRole('button', { name: /دخول|تسجيل/i }).click()
     // Should stay on login page with an error
     await expect(page).toHaveURL(/\/admin\/login/)
-    await expect(page.getByRole('alert').or(page.locator('[role="alert"], .error, [data-error]'))).toBeVisible()
+    await expect(page.locator('p[role="alert"]')).toBeVisible()
   })
 
   test('logs in with correct password and redirects to dashboard', async ({ page }) => {
