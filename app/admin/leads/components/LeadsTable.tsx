@@ -7,6 +7,7 @@ import {
   reassignLeadAdmin,
   releaseLeadAdmin,
   clearDeclinedListAdmin,
+  updateLeadRatingAdmin,
 } from '@/app/admin/actions/updateLead'
 
 /* ── Types ──────────────────────────────────────────────── */
@@ -25,6 +26,7 @@ export type LeadRecord = {
   contact_verified_at: string | null
   declined_by        : string[]
   customer_feedback  : string | null
+  sale_rating        : string | null
   created_at         : string
 }
 
@@ -38,8 +40,15 @@ export type CompanyOption = {
 }
 
 /* ── Constants ──────────────────────────────────────────── */
-// Statuses only valid when a company is assigned
 const ASSIGNED_STATUSES = ['تم التواصل', 'تمت الزيارة', 'تمت البيعة', 'لم يتم الاتفاق', 'مؤرشف']
+
+const RATING_OPTIONS = ['ممتاز', 'جيد', 'يحتاج تحسين'] as const
+
+const RATING_COLORS: Record<string, { color: string; bg: string }> = {
+  'ممتاز'         : { color: 'var(--color-success)',  bg: 'var(--color-success-bg)' },
+  'جيد'            : { color: 'oklch(75% 0.14 70)',    bg: 'oklch(20% 0.06 70)' },
+  'يحتاج تحسين'   : { color: 'oklch(65% 0.18 25)',    bg: 'oklch(18% 0.06 25)' },
+}
 
 const STATUS_COLORS: Record<string, { color: string; bg: string }> = {
   'معلق'          : { color: 'var(--color-ink-faint)',  bg: 'var(--color-surface-warm)' },
@@ -297,6 +306,13 @@ export default function LeadsTable({
     [runAction],
   )
 
+  const handleRatingChange = useCallback(
+    (lead: LeadRecord, newRating: string) => {
+      runAction(lead.id, () => updateLeadRatingAdmin(lead.id, newRating || null))
+    },
+    [runAction],
+  )
+
   /* Filtering */
   const filtered = initialLeads.filter(lead => {
     // Quick filters take priority — they override status/company filters
@@ -492,6 +508,7 @@ export default function LeadsTable({
                       { label: 'التفاصيل',   title: 'المدينة والخدمات' },
                       { label: 'الشركة',     title: 'اختر شركة أو اتركها فارغة' },
                       { label: 'الحالة',     title: 'تتغير فقط إذا كانت هناك شركة' },
+                      { label: 'التقييم',    title: 'تقييم الصفقة' },
                       { label: 'إجراءات',    title: 'تحرير أو مسح الرفض' },
                     ].map(h => (
                       <th
@@ -665,6 +682,27 @@ export default function LeadsTable({
                           )}
                         </td>
 
+                        {/* Rating */}
+                        <td style={{ padding: '14px', verticalAlign: 'middle' }}>
+                          {isPending ? <Spinner /> : (
+                            <select
+                              value={lead.sale_rating ?? ''}
+                              disabled={isPending}
+                              onChange={e => handleRatingChange(lead, e.target.value)}
+                              style={{
+                                ...selectBase,
+                                color     : lead.sale_rating ? (RATING_COLORS[lead.sale_rating]?.color ?? 'var(--color-ink-dim)') : 'var(--color-ink-faint)',
+                                background: lead.sale_rating ? (RATING_COLORS[lead.sale_rating]?.bg    ?? 'var(--color-bg)')     : 'var(--color-bg)',
+                                fontWeight: lead.sale_rating ? 600 : 400,
+                                minWidth  : '120px',
+                              }}
+                            >
+                              <option value="">— بدون تقييم —</option>
+                              {RATING_OPTIONS.map(r => <option key={r} value={r}>{r}</option>)}
+                            </select>
+                          )}
+                        </td>
+
                         {/* Actions */}
                         <td style={{ padding: '14px', verticalAlign: 'middle' }}>
                           <div className="flex flex-col gap-1.5">
@@ -816,6 +854,28 @@ export default function LeadsTable({
                             <p className="font-body mt-0.5" style={{ fontSize: '0.65rem', color: 'var(--color-ink-faint)' }}>عيِّن شركة أولاً لتغيير الحالة</p>
                           )}
                         </div>
+                      )}
+                    </div>
+
+                    {/* Rating */}
+                    <div className="flex items-center gap-2">
+                      <span className="font-body shrink-0" style={{ fontSize: '0.72rem', color: 'var(--color-ink-faint)', width: '52px' }}>التقييم</span>
+                      {isPending ? <Spinner /> : (
+                        <select
+                          value={lead.sale_rating ?? ''}
+                          disabled={isPending}
+                          onChange={e => handleRatingChange(lead, e.target.value)}
+                          style={{
+                            ...selectBase,
+                            flex      : 1,
+                            color     : lead.sale_rating ? (RATING_COLORS[lead.sale_rating]?.color ?? 'var(--color-ink-dim)') : 'var(--color-ink-faint)',
+                            background: lead.sale_rating ? (RATING_COLORS[lead.sale_rating]?.bg    ?? 'var(--color-bg)')     : 'var(--color-bg)',
+                            fontWeight: lead.sale_rating ? 600 : 400,
+                          }}
+                        >
+                          <option value="">— بدون تقييم —</option>
+                          {RATING_OPTIONS.map(r => <option key={r} value={r}>{r}</option>)}
+                        </select>
                       )}
                     </div>
 

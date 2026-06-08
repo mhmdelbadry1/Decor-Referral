@@ -106,3 +106,21 @@ export async function clearDeclinedListAdmin(leadId: string) {
   refreshPaths()
   return { success: true }
 }
+
+export const VALID_RATINGS = ['ممتاز', 'جيد', 'يحتاج تحسين'] as const
+export type SaleRating = typeof VALID_RATINGS[number]
+
+/** Set or clear the sale_rating on a lead. Pass null to remove the rating. */
+export async function updateLeadRatingAdmin(leadId: string, rating: string | null) {
+  if (rating !== null && !VALID_RATINGS.includes(rating as SaleRating)) {
+    return { error: 'تقييم غير صالح' }
+  }
+  const supabase = createServerClient()
+  const { error } = await supabase
+    .from('leads')
+    .update({ sale_rating: rating })
+    .eq('id', leadId)
+  if (error) return { error: error.message }
+  refreshPaths()
+  return { success: true }
+}

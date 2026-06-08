@@ -47,12 +47,17 @@ type LeadRow = {
   company_id        : string | null
   claimed_at        : string | null
   contact_verified_at: string | null
+  sale_rating       : string | null
   created_at        : string
 }
 
 type CompanyRow = {
-  id  : string
-  name: string
+  id          : string
+  name        : string
+  rep_name    : string | null
+  rep_whatsapp: string | null
+  specialty   : string[]
+  city        : string[]
 }
 
 type BroadcastRow = {
@@ -68,12 +73,13 @@ export default async function AdminDashboardPage() {
   const [leadsResult, companiesResult, broadcastsResult, formConfig] = await Promise.all([
     supabase
       .from('leads')
-      .select('id, customer_name, city, services, budget, status, company_id, claimed_at, contact_verified_at, created_at')
+      .select('id, customer_name, city, services, budget, status, company_id, claimed_at, contact_verified_at, sale_rating, created_at')
       .order('created_at', { ascending: false }),
 
     supabase
       .from('companies')
-      .select('id, name'),
+      .select('id, name, rep_name, rep_whatsapp, specialty, city')
+      .order('name'),
 
     supabase
       .from('lead_broadcasts')
@@ -131,13 +137,26 @@ export default async function AdminDashboardPage() {
       const trustScore    = claimedByThis.length > 0
         ? Math.round((verified.length / claimedByThis.length) * 100) : 0
 
+      const ratedLeads = claimedByThis.filter(l => l.sale_rating !== null)
+      const ratings = {
+        excellent        : ratedLeads.filter(l => l.sale_rating === 'ممتاز').length,
+        good             : ratedLeads.filter(l => l.sale_rating === 'جيد').length,
+        needsImprovement : ratedLeads.filter(l => l.sale_rating === 'يحتاج تحسين').length,
+      }
+
       return {
-        name      : company.name,
+        id         : company.id,
+        name       : company.name,
+        repName    : company.rep_name,
+        repWhatsapp: company.rep_whatsapp,
+        specialty  : company.specialty ?? [],
+        cities     : company.city ?? [],
         received,
-        claimed   : claimedByThis.length,
-        verified  : verified.length,
-        closed    : closed.length,
+        claimed    : claimedByThis.length,
+        verified   : verified.length,
+        closed     : closed.length,
         trustScore,
+        ratings,
       }
     })
     .sort((a, b) => b.trustScore - a.trustScore)
@@ -208,7 +227,11 @@ export default async function AdminDashboardPage() {
           <StatusDistribution data={statusDistribution} total={totalLeads} />
         )}
 
-        <TrustLeaderboard rows={leaderboard} />
+        <TrustLeaderboard
+          rows={leaderboard}
+          cities={formConfig.cities}
+          services={formConfig.services}
+        />
 
         <RecentLeads rows={recentLeads} />
       </div>
