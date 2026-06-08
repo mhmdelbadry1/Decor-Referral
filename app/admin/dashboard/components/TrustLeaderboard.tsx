@@ -2,22 +2,24 @@
 
 import { useActionState, useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { deleteCompany } from '@/app/admin/actions/deleteCompany'
-import { updateCompany } from '@/app/admin/actions/updateCompany'
+import { deleteCompany }                     from '@/app/admin/actions/deleteCompany'
+import { updateCompany }                     from '@/app/admin/actions/updateCompany'
+import { blacklistCompany, unblacklistCompany } from '@/app/admin/actions/blacklistCompany'
 
 export interface CompanyLeaderboardRow {
-  id          : string
-  name        : string
-  repName     : string | null
-  repWhatsapp : string | null
-  specialty   : string[]
-  cities      : string[]
-  received    : number
-  claimed     : number
-  verified    : number
-  closed      : number
-  trustScore  : number
-  ratings     : { excellent: number; good: number; needsImprovement: number }
+  id            : string
+  name          : string
+  repName       : string | null
+  repWhatsapp   : string | null
+  specialty     : string[]
+  cities        : string[]
+  isBlacklisted : boolean
+  received      : number
+  claimed       : number
+  verified      : number
+  closed        : number
+  trustScore    : number
+  ratings       : { excellent: number; good: number; needsImprovement: number }
 }
 
 /* ── Shared styles ──────────────────────────────────────── */
@@ -195,12 +197,39 @@ export default function TrustLeaderboard({
   services: string[]
 }) {
   const router = useRouter()
-  const [editingId,  setEditingId]  = useState<string | null>(null)
-  const [deleteState, setDeleteState] = useState<Record<string, { confirm: boolean; pending: boolean; error?: string }>>({})
+  const [editingId,   setEditingId]   = useState<string | null>(null)
+  const [deleteState, setDeleteState] = useState<Record<string, {
+    confirm      : boolean
+    pending      : boolean
+    error?       : string
+    canBlacklist?: boolean
+  }>>({})
 
   const handleDelete = useCallback(async (companyId: string) => {
     setDeleteState(s => ({ ...s, [companyId]: { confirm: false, pending: true } }))
     const result = await deleteCompany(companyId)
+    if (result.canBlacklist) {
+      setDeleteState(s => ({ ...s, [companyId]: { confirm: false, pending: false, error: result.error, canBlacklist: true } }))
+    } else if (result.error) {
+      setDeleteState(s => ({ ...s, [companyId]: { confirm: false, pending: false, error: result.error } }))
+    } else {
+      router.refresh()
+    }
+  }, [router])
+
+  const handleBlacklist = useCallback(async (companyId: string) => {
+    setDeleteState(s => ({ ...s, [companyId]: { confirm: false, pending: true } }))
+    const result = await blacklistCompany(companyId)
+    if (result.error) {
+      setDeleteState(s => ({ ...s, [companyId]: { confirm: false, pending: false, error: result.error } }))
+    } else {
+      router.refresh()
+    }
+  }, [router])
+
+  const handleUnblacklist = useCallback(async (companyId: string) => {
+    setDeleteState(s => ({ ...s, [companyId]: { confirm: false, pending: true } }))
+    const result = await unblacklistCompany(companyId)
     if (result.error) {
       setDeleteState(s => ({ ...s, [companyId]: { confirm: false, pending: false, error: result.error } }))
     } else {
@@ -273,7 +302,14 @@ export default function TrustLeaderboard({
                   }}
                 >
                   <td style={{ ...tdStyle, color: 'var(--color-ink)', fontWeight: 600, minWidth: '180px' }}>
-                    <span className="font-display">{row.name}</span>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-display">{row.name}</span>
+                      {row.isBlacklisted && (
+                        <span className="inline-flex items-center rounded-full px-2 py-0.5 font-body font-semibold" style={{ fontSize: '0.65rem', color: 'oklch(65% 0.18 25)', background: 'oklch(18% 0.06 25)', border: '1px solid oklch(35% 0.14 25)' }}>
+                          محظورة
+                        </span>
+                      )}
+                    </div>
                     {row.repName && (
                       <p style={{ fontSize: '0.72rem', color: 'var(--color-ink-faint)', fontWeight: 400, marginTop: '2px' }}>{row.repName}</p>
                     )}
@@ -285,7 +321,7 @@ export default function TrustLeaderboard({
                         onClose={() => setEditingId(null)}
                       />
                     )}
-                    {state.error && (
+                    {state.error && !state.canBlacklist && (
                       <p style={{ fontSize: '0.72rem', color: 'oklch(65% 0.18 25)', marginTop: '4px' }}>{state.error}</p>
                     )}
                   </td>
@@ -303,9 +339,9 @@ export default function TrustLeaderboard({
                   <td style={{ ...tdStyle, textAlign: 'center' }}>
                     <RatingSummary ratings={row.ratings} />
                   </td>
-                  <td style={{ ...tdStyle, textAlign: 'center', minWidth: '130px' }}>
+                  <td style={{ ...tdStyle, textAlign: 'center', minWidth: '150px' }}>
                     <div className="flex flex-col gap-1.5 items-center">
-                      {/* Edit button */}
+                      {/* Edit */}
                       <button
                         onClick={() => setEditingId(isEditing ? null : row.id)}
                         className="rounded-md px-2.5 py-1 font-body font-medium transition-colors duration-150 w-full"
@@ -314,8 +350,36 @@ export default function TrustLeaderboard({
                         {isEditing ? 'إغلاق' : 'تعديل'}
                       </button>
 
-                      {/* Delete button or confirm */}
-                      {!state.confirm ? (
+                      {/* Blacklist / unblacklist / delete */}
+                      {row.isBlacklisted ? (
+                        <button
+                          disabled={state.pending}
+                          onClick={() => handleUnblacklist(row.id)}
+                          className="rounded-md px-2.5 py-1 font-body font-medium transition-colors duration-150 w-full disabled:opacity-50"
+                          style={{ fontSize: '0.72rem', background: 'oklch(20% 0.06 70)', color: 'oklch(75% 0.14 70)', border: '1px solid oklch(35% 0.12 70)' }}
+                        >
+                          {state.pending ? '...' : 'رفع الحظر'}
+                        </button>
+                      ) : state.canBlacklist ? (
+                        <div className="flex flex-col gap-1 w-full">
+                          <p className="font-body text-center" style={{ fontSize: '0.62rem', color: 'var(--color-ink-faint)' }}>لديها سجل عملاء</p>
+                          <button
+                            disabled={state.pending}
+                            onClick={() => handleBlacklist(row.id)}
+                            className="rounded-md px-2 py-1 font-body font-semibold w-full disabled:opacity-50"
+                            style={{ fontSize: '0.7rem', background: 'oklch(18% 0.06 25)', color: 'oklch(65% 0.18 25)', border: '1px solid oklch(35% 0.14 25)' }}
+                          >
+                            {state.pending ? '...' : 'قائمة سوداء'}
+                          </button>
+                          <button
+                            onClick={() => setDeleteState(s => ({ ...s, [row.id]: { confirm: false, pending: false } }))}
+                            className="rounded-md px-2 py-1 font-body w-full"
+                            style={{ fontSize: '0.68rem', background: 'transparent', color: 'var(--color-ink-faint)' }}
+                          >
+                            إلغاء
+                          </button>
+                        </div>
+                      ) : !state.confirm ? (
                         <button
                           disabled={state.pending}
                           onClick={() => setDeleteState(s => ({ ...s, [row.id]: { confirm: true, pending: false } }))}
@@ -364,9 +428,16 @@ export default function TrustLeaderboard({
             <div key={row.id} className="px-5 py-4 flex flex-col gap-3">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex flex-col gap-0.5 min-w-0">
-                  <span className="font-display font-semibold truncate" style={{ fontSize: '0.97rem', color: 'var(--color-ink)' }}>
-                    {row.name}
-                  </span>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-display font-semibold truncate" style={{ fontSize: '0.97rem', color: 'var(--color-ink)' }}>
+                      {row.name}
+                    </span>
+                    {row.isBlacklisted && (
+                      <span className="inline-flex items-center rounded-full px-1.5 py-0.5 font-body font-semibold" style={{ fontSize: '0.62rem', color: 'oklch(65% 0.18 25)', background: 'oklch(18% 0.06 25)' }}>
+                        محظورة
+                      </span>
+                    )}
+                  </div>
                   <span className="font-body" style={{ fontSize: '0.75rem', color: 'var(--color-ink-faint)' }}>
                     {row.claimed} ملتقطة · {row.closed} مغلقة
                   </span>
@@ -394,7 +465,7 @@ export default function TrustLeaderboard({
               )}
 
               {/* Action buttons */}
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <button
                   onClick={() => setEditingId(isEditing ? null : row.id)}
                   className="flex-1 rounded-lg py-1.5 font-body font-medium transition-colors duration-150"
@@ -403,7 +474,35 @@ export default function TrustLeaderboard({
                   {isEditing ? 'إغلاق' : 'تعديل'}
                 </button>
 
-                {!state.confirm ? (
+                {row.isBlacklisted ? (
+                  <button
+                    disabled={state.pending}
+                    onClick={() => handleUnblacklist(row.id)}
+                    className="flex-1 rounded-lg py-1.5 font-body font-medium disabled:opacity-50"
+                    style={{ fontSize: '0.8rem', background: 'oklch(20% 0.06 70)', color: 'oklch(75% 0.14 70)', border: '1px solid oklch(35% 0.12 70)' }}
+                  >
+                    {state.pending ? '...' : 'رفع الحظر'}
+                  </button>
+                ) : state.canBlacklist ? (
+                  <div className="flex-1 flex flex-col gap-1">
+                    <p className="font-body text-center" style={{ fontSize: '0.7rem', color: 'var(--color-ink-faint)' }}>لديها سجل عملاء</p>
+                    <button
+                      disabled={state.pending}
+                      onClick={() => handleBlacklist(row.id)}
+                      className="w-full rounded-md py-1 font-body font-semibold disabled:opacity-50"
+                      style={{ fontSize: '0.78rem', background: 'oklch(18% 0.06 25)', color: 'oklch(65% 0.18 25)', border: '1px solid oklch(35% 0.14 25)' }}
+                    >
+                      {state.pending ? '...' : 'قائمة سوداء'}
+                    </button>
+                    <button
+                      onClick={() => setDeleteState(s => ({ ...s, [row.id]: { confirm: false, pending: false } }))}
+                      className="w-full rounded-md py-0.5 font-body"
+                      style={{ fontSize: '0.72rem', color: 'var(--color-ink-faint)' }}
+                    >
+                      إلغاء
+                    </button>
+                  </div>
+                ) : !state.confirm ? (
                   <button
                     disabled={state.pending}
                     onClick={() => setDeleteState(s => ({ ...s, [row.id]: { confirm: true, pending: false } }))}

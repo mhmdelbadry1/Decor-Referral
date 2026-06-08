@@ -52,12 +52,13 @@ type LeadRow = {
 }
 
 type CompanyRow = {
-  id          : string
-  name        : string
-  rep_name    : string | null
-  rep_whatsapp: string | null
-  specialty   : string[]
-  city        : string[]
+  id            : string
+  name          : string
+  rep_name      : string | null
+  rep_whatsapp  : string | null
+  specialty     : string[]
+  city          : string[]
+  is_blacklisted: boolean
 }
 
 type BroadcastRow = {
@@ -78,7 +79,7 @@ export default async function AdminDashboardPage() {
 
     supabase
       .from('companies')
-      .select('id, name, rep_name, rep_whatsapp, specialty, city')
+      .select('id, name, rep_name, rep_whatsapp, specialty, city, is_blacklisted')
       .order('name'),
 
     supabase
@@ -145,16 +146,17 @@ export default async function AdminDashboardPage() {
       }
 
       return {
-        id         : company.id,
-        name       : company.name,
-        repName    : company.rep_name,
-        repWhatsapp: company.rep_whatsapp,
-        specialty  : company.specialty ?? [],
-        cities     : company.city ?? [],
+        id           : company.id,
+        name         : company.name,
+        repName      : company.rep_name,
+        repWhatsapp  : company.rep_whatsapp,
+        specialty    : company.specialty ?? [],
+        cities       : company.city ?? [],
+        isBlacklisted: company.is_blacklisted ?? false,
         received,
-        claimed    : claimedByThis.length,
-        verified   : verified.length,
-        closed     : closed.length,
+        claimed      : claimedByThis.length,
+        verified     : verified.length,
+        closed        : closed.length,
         trustScore,
         ratings,
       }

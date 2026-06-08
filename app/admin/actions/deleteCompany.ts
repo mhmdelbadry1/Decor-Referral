@@ -4,26 +4,31 @@ import { revalidatePath }     from 'next/cache'
 import { createServerClient } from '@/lib/supabase'
 
 export type DeleteCompanyState = {
-  success?: boolean
-  error?  : string
+  success?     : boolean
+  error?       : string
+  canBlacklist?: boolean  // true when company has leads — blacklist instead of deleting
 }
 
 /**
- * Delete a company. Blocked if the company has any leads that are still
- * active (not archived / not-agreed / not-sold) to prevent orphaned records.
+ * Delete a company. Blocked entirely if the company has ANY leads (active or
+ * completed) to preserve referential history. The caller should offer blacklist
+ * as the alternative (canBlacklist: true in the response).
  */
 export async function deleteCompany(companyId: string): Promise<DeleteCompanyState> {
   const supabase = createServerClient()
 
-  const { data: active } = await supabase
+  // Block if company has any leads at all
+  const { data: anyLeads } = await supabase
     .from('leads')
     .select('id')
     .eq('company_id', companyId)
-    .not('status', 'in', '("مؤرشف","لم يتم الاتفاق","تمت البيعة")')
     .limit(1)
 
-  if (active && active.length > 0) {
-    return { error: 'لا يمكن حذف الشركة — لديها عملاء نشطون. أعد تعيينهم أولاً.' }
+  if (anyLeads && anyLeads.length > 0) {
+    return {
+      error       : 'لا يمكن حذف الشركة لأن لديها سجل عملاء. يمكنك إضافتها للقائمة السوداء لمنعها من استقبال طلبات جديدة.',
+      canBlacklist: true,
+    }
   }
 
   const { error } = await supabase.from('companies').delete().eq('id', companyId)
