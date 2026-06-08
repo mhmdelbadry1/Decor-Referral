@@ -42,7 +42,7 @@ export function buildLeadSchema(config: {
     phone   : z.string().regex(phoneRegex, 'رقم الجوال غير صحيح'),
     email   : z.string().email().max(200).optional().or(z.literal('')),
     city    : z.enum(nonEmptyStringList(config.cities)),
-    services: z.array(z.enum(nonEmptyStringList(config.services))).min(1, 'اختر خدمة واحدة على الأقل').max(10),
+    services: z.array(z.enum(nonEmptyStringList(config.services))).min(1, 'اختر خدمة واحدة على الأقل').max(10, 'لا يمكن اختيار أكثر من ١٠ خدمات'),
     budget  : z.enum(nonEmptyStringList(config.budgets)),
   })
 }
@@ -55,8 +55,8 @@ export function buildPartnerSchema(config: {
     companyName : z.string().min(2, 'اسم الشركة قصير جداً').max(150).trim(),
     contactName : z.string().min(2, 'اسم المندوب قصير جداً').max(100).trim(),
     phone       : z.string().regex(phoneRegex, 'رقم الجوال غير صحيح'),
-    services    : z.array(z.enum(nonEmptyStringList(config.services))).min(1, 'اختر تخصصاً واحداً على الأقل').max(10),
-    cities      : z.array(z.enum(nonEmptyStringList(config.cities))).min(1, 'اختر منطقة واحدة على الأقل').max(10),
+    services    : z.array(z.enum(nonEmptyStringList(config.services))).min(1, 'اختر تخصصاً واحداً على الأقل').max(10, 'لا يمكن اختيار أكثر من ١٠ تخصصات'),
+    cities      : z.array(z.enum(nonEmptyStringList(config.cities))).min(1, 'اختر منطقة واحدة على الأقل').max(10, 'لا يمكن اختيار أكثر من ١٠ مناطق'),
   })
 }
 
