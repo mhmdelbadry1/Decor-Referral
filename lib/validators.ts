@@ -1,8 +1,18 @@
 import { z } from 'zod'
+import { TESTING_EXTRA_COUNTRIES } from './phone'
 
-/* ── Static fields ────────────────────────────────────────── */
+/* ── Phone regex ──────────────────────────────────────────── */
+// Built from KSA + any entries in TESTING_EXTRA_COUNTRIES.
+// To revert to KSA-only: clear TESTING_EXTRA_COUNTRIES in lib/phone.ts.
+function buildPhoneRegex(): RegExp {
+  const patterns = [
+    '\\+9665\\d{8}',
+    ...TESTING_EXTRA_COUNTRIES.map(c => c.e164Regex),
+  ]
+  return new RegExp(`^(${patterns.join('|')})$`)
+}
 
-const phoneRegex = /^\+9665\d{8}$/  // Saudi mobile format
+const phoneRegex = buildPhoneRegex()
 
 export const ALLOWED_LEAD_STATUSES = [
   'تم التواصل',
@@ -29,7 +39,7 @@ export function buildLeadSchema(config: {
 }) {
   return z.object({
     name    : z.string().min(2, 'الاسم قصير جداً').max(100, 'الاسم طويل جداً').trim(),
-    phone   : z.string().regex(phoneRegex, 'رقم الجوال غير صحيح (يجب أن يبدأ بـ +9665 ويتبعه 8 أرقام)'),
+    phone   : z.string().regex(phoneRegex, 'رقم الجوال غير صحيح'),
     email   : z.string().email().max(200).optional().or(z.literal('')),
     city    : z.enum(nonEmptyStringList(config.cities)),
     services: z.array(z.enum(nonEmptyStringList(config.services))).min(1, 'اختر خدمة واحدة على الأقل').max(10),

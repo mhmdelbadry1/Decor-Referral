@@ -189,13 +189,13 @@ export default function AddCompanyPanel({ cities = [], services = [] }: Props) {
                 type="tel"
                 name="phone"
                 required
-                placeholder="+966512345678"
+                placeholder="+966512345678 / +201012345678"
                 dir="ltr"
                 className="input-field text-start"
                 style={{ ...inputStyle, letterSpacing: '0.05em' }}
               />
               <p className="font-body mt-1.5" style={{ fontSize: '0.73rem', color: 'var(--color-ink-faint)' }}>
-                يجب أن يبدأ بـ +9665
+                مثال: +966512345678 أو +201012345678
               </p>
             </div>
 

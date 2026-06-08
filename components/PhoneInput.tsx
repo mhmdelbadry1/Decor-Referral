@@ -1,7 +1,7 @@
 'use client'
 
 import { forwardRef, useState } from 'react'
-import { normalizeKSAPhone, formatKSAPhoneDisplay } from '@/lib/phone'
+import { normalizePhone, formatPhoneDisplay, TESTING_EXTRA_COUNTRIES } from '@/lib/phone'
 
 type ValidationState = 'idle' | 'valid' | 'invalid'
 
@@ -16,7 +16,7 @@ const PhoneInput = forwardRef<HTMLInputElement, PhoneInputProps>(
   ({ id, value, onChange, 'aria-describedby': ariaDescribedBy }, ref) => {
     const [touched, setTouched] = useState(false)
 
-    const normalized = value.trim() ? normalizeKSAPhone(value) : null
+    const normalized = value.trim() ? normalizePhone(value) : null
     const state: ValidationState = !touched || !value.trim()
       ? 'idle'
       : normalized
@@ -53,7 +53,7 @@ const PhoneInput = forwardRef<HTMLInputElement, PhoneInputProps>(
             id={id}
             type="tel"
             inputMode="numeric"
-            placeholder="05X XXX XXXX"
+            placeholder={TESTING_EXTRA_COUNTRIES.length ? '05X XXX XXXX / +20 1X...' : '05X XXX XXXX'}
             value={value}
             autoComplete="tel"
             aria-required="true"
@@ -67,7 +67,7 @@ const PhoneInput = forwardRef<HTMLInputElement, PhoneInputProps>(
               .join(' ') || undefined}
             onChange={(e) => {
               const raw = e.target.value
-              onChange(raw, normalizeKSAPhone(raw))
+              onChange(raw, normalizePhone(raw))
             }}
             onBlur={() => setTouched(true)}
             className="
@@ -110,7 +110,7 @@ const PhoneInput = forwardRef<HTMLInputElement, PhoneInputProps>(
             className="font-body"
             style={{ fontSize: '0.77rem', color: 'var(--color-success)', direction: 'ltr' }}
           >
-            ✓ {formatKSAPhoneDisplay(normalized)}
+            ✓ {formatPhoneDisplay(normalized)}
           </p>
         )}
 
@@ -122,7 +122,9 @@ const PhoneInput = forwardRef<HTMLInputElement, PhoneInputProps>(
             className="font-body"
             style={{ fontSize: '0.77rem', color: 'oklch(65% 0.18 25)' }}
           >
-            رقم غير صحيح — أدخل رقم جوال سعودي مثل 0512345678
+            {TESTING_EXTRA_COUNTRIES.length
+            ? 'رقم غير صحيح — أدخل رقم سعودي مثل 0512345678 أو مصري مثل 01012345678'
+            : 'رقم غير صحيح — أدخل رقم جوال سعودي مثل 0512345678'}
           </p>
         )}
 
@@ -132,7 +134,9 @@ const PhoneInput = forwardRef<HTMLInputElement, PhoneInputProps>(
             className="font-body"
             style={{ fontSize: '0.77rem', color: 'var(--color-ink-faint)' }}
           >
-            رقم جوال سعودي — مثال: 0512345678
+            {TESTING_EXTRA_COUNTRIES.length
+            ? 'رقم سعودي مثل 0512345678 أو مصري مثل 01012345678'
+            : 'رقم جوال سعودي — مثال: 0512345678'}
           </p>
         )}
       </div>
