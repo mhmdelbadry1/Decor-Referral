@@ -4,11 +4,12 @@ import { createServerClient } from '@/lib/supabase'
 import { buildLeadSchema }    from '@/lib/validators'
 import { getFormConfig }      from '@/lib/getFormConfig'
 
-type Result = { error: string } | { error?: never }
+export type SubmitLeadResult =
+  | { error: string }
+  | { error?: never; skipped?: string[] }
 
-export async function submitLead(data: unknown): Promise<Result> {
+export async function submitLead(data: unknown): Promise<SubmitLeadResult> {
   try {
-    // Fetch live config so validation always matches the admin-configured options
     const config = await getFormConfig()
     const LeadSchema = buildLeadSchema(config)
 
@@ -21,28 +22,34 @@ export async function submitLead(data: unknown): Promise<Result> {
     const { name, phone, city, services, budget } = parsed.data
     const supabase = createServerClient()
 
-    // Reject only if same phone + same city + overlapping services is already active
+    // Collect every service that already has an active lead for this phone + city
     const { data: activeLeads } = await supabase
       .from('leads')
-      .select('city, services')
+      .select('services')
       .eq('customer_phone', phone)
+      .eq('city', city)
       .in('status', ['معلق', 'تم التواصل', 'تمت الزيارة'])
 
-    const isDuplicate = (activeLeads ?? []).some(
-      lead =>
-        lead.city === city &&
-        (lead.services as string[]).some(s => services.includes(s))
+    const activeServices = new Set<string>(
+      (activeLeads ?? []).flatMap(l => l.services as string[])
     )
 
-    if (isDuplicate) {
-      return { error: 'لقد استلمنا طلبك لهذه الخدمة في نفس المدينة بالفعل — سنتواصل معك قريباً عبر واتساب.' }
+    const newServices = services.filter(s => !activeServices.has(s))
+    const skipped     = services.filter(s =>  activeServices.has(s))
+
+    // Every submitted service is already being handled — nothing new to insert
+    if (newServices.length === 0) {
+      const list = skipped.join('، ')
+      return {
+        error: `لديك طلب نشط بالفعل لـ (${list}) في ${city} — سنتواصل معك قريباً عبر واتساب.`,
+      }
     }
 
     const { error } = await supabase.from('leads').insert({
       customer_name:  name,
       customer_phone: phone,
       city,
-      services,
+      services: newServices,
       budget,
       status: 'معلق',
     })
@@ -52,7 +59,7 @@ export async function submitLead(data: unknown): Promise<Result> {
       return { error: 'فشل في إرسال الطلب، يرجى المحاولة مرة أخرى' }
     }
 
-    return {}
+    return { skipped: skipped.length > 0 ? skipped : undefined }
   } catch {
     return { error: 'حدث خطأ غير متوقع، يرجى المحاولة مرة أخرى' }
   }

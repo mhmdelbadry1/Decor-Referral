@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useRef, useState, type ReactNode } from 'react'
-import { submitLead } from '@/app/actions/submitLead'
+import { submitLead, type SubmitLeadResult } from '@/app/actions/submitLead'
 import PhoneInput from '@/components/PhoneInput'
 
 /* ── Types ────────────────────────────────────────────── */
@@ -153,6 +153,7 @@ export default function ConsultationForm({
   }))
   const [step, setStep] = useState(0)
   const [submitted, setSubmitted] = useState(false)
+  const [skippedServices, setSkippedServices] = useState<string[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [data, setData] = useState<FormData>({
@@ -201,7 +202,7 @@ export default function ConsultationForm({
     setSubmitting(true)
     setSubmitError(null)
     try {
-      const result = await submitLead({
+      const result: SubmitLeadResult = await submitLead({
         city:     data.city!,
         services: data.services,
         budget:   data.budget!,
@@ -209,9 +210,11 @@ export default function ConsultationForm({
         phone:    data.phoneNormalized,
         email:    data.email,
       })
-      if (result?.error) {
+      if ('error' in result && result.error) {
         setSubmitError(result.error)
       } else {
+        const ok = result as { skipped?: string[] }
+        setSkippedServices(ok.skipped ?? [])
         setSubmitted(true)
       }
     } catch {
@@ -316,6 +319,11 @@ export default function ConsultationForm({
                 سيتواصل معك المستشار عبر واتساب خلال 24 ساعة بأفضل العروض
                 الموثوقة لمشروعك.
               </p>
+              {skippedServices.length > 0 && (
+                <p className="mt-4 text-[0.82rem] text-ink-faint max-w-[38ch] mx-auto leading-[1.6]">
+                  ملاحظة: لديك طلب نشط بالفعل لـ ({skippedServices.join('، ')}) — سنتابعه معك أيضاً.
+                </p>
+              )}
             </div>
           ) : (
             /* ── Active step ───────────────────────────── */
