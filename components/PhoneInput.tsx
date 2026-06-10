@@ -71,7 +71,7 @@ const PhoneInput = forwardRef<HTMLInputElement, PhoneInputProps>(
             }}
             onBlur={() => setTouched(true)}
             className="
-              w-full px-4 py-[13px] pe-10
+              w-full px-4 py-[13px] pr-10
               border rounded-sm
               bg-bg text-ink font-body text-base
               placeholder:text-ink-faint
@@ -89,7 +89,7 @@ const PhoneInput = forwardRef<HTMLInputElement, PhoneInputProps>(
           {/* State icon — only show X on invalid; valid state is communicated by the hint below */}
           {state === 'invalid' && (
             <span
-              className="absolute top-1/2 -translate-y-1/2 end-3 pointer-events-none"
+              className="absolute top-1/2 -translate-y-1/2 right-3 pointer-events-none"
               aria-hidden="true"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
