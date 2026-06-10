@@ -68,18 +68,7 @@ interface ExtraCountryConfig {
   displayFormat: (local: string) => string
 }
 
-export const TESTING_EXTRA_COUNTRIES: ExtraCountryConfig[] = [
-  {
-    countryCode  : '20',
-    e164Prefix   : '+20',
-    mobileRegex  : /^1[0125]/,
-    localLength  : 10,
-    localPrefixes: ['01', '1'],
-    e164Regex    : '\\+201[0125]\\d{8}',
-    displayFormat: (local) =>
-      `+20 ${local.slice(0, 2)} ${local.slice(2, 6)} ${local.slice(6)}`,
-  },
-]
+export const TESTING_EXTRA_COUNTRIES: ExtraCountryConfig[] = []
 // ─────────────────────────────────────────────────────────────────────────
 
 function normalizeExtraCountry(raw: string, cfg: ExtraCountryConfig): string | null {
