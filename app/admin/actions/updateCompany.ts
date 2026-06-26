@@ -23,11 +23,12 @@ export async function updateCompany(
   const config = await getFormConfig()
 
   const raw = {
-    companyName: formData.get('companyName'),
-    contactName: formData.get('contactName'),
-    phone      : formData.get('phone'),
-    services   : formData.getAll('services'),
-    cities     : formData.getAll('cities'),
+    companyName : formData.get('companyName'),
+    contactName : formData.get('contactName'),
+    phone       : formData.get('phone'),
+    services    : formData.getAll('services'),
+    cities      : formData.getAll('cities'),
+    discountCode: formData.get('discountCode'),
   }
 
   const PartnerSchema = buildPartnerSchema({ cities: config.cities, services: config.services })
@@ -37,20 +38,25 @@ export async function updateCompany(
   }
 
   const { companyName, contactName, phone, services, cities } = parsed.data
+  const discountCode = (raw.discountCode as string | null)?.trim() || null
   const supabase = createServerClient()
 
   const { error } = await supabase
     .from('companies')
     .update({
-      name        : companyName,
-      rep_name    : contactName,
-      rep_whatsapp: phone,
-      specialty   : services,
-      city        : cities,
+      name         : companyName,
+      rep_name     : contactName,
+      rep_whatsapp : phone,
+      specialty    : services,
+      city         : cities,
+      discount_code: discountCode,
     })
     .eq('id', companyId)
 
-  if (error) return { error: error.message }
+  if (error) {
+    if (error.code === '23505') return { error: 'كود الخصم هذا مستخدم بالفعل — اختر كوداً آخر' }
+    return { error: error.message }
+  }
 
   revalidatePath('/admin/dashboard')
   revalidatePath('/admin/leads')

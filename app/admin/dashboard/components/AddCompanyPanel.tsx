@@ -199,13 +199,30 @@ export default function AddCompanyPanel({ cities = [], services = [] }: Props) {
               </p>
             </div>
 
-            {/* Row 3: Services */}
+            {/* Row 3: Discount code */}
+            <div className="max-w-xs">
+              <FieldLabel>كود الخصم</FieldLabel>
+              <input
+                type="text"
+                name="discountCode"
+                placeholder="مثال: DECOR2026"
+                maxLength={20}
+                dir="ltr"
+                className="input-field text-start"
+                style={{ ...inputStyle, letterSpacing: '0.08em', textTransform: 'uppercase' }}
+              />
+              <p className="font-body mt-1.5" style={{ fontSize: '0.73rem', color: 'var(--color-ink-faint)' }}>
+                اختياري — يجب أن يكون فريداً لكل شركة
+              </p>
+            </div>
+
+            {/* Row 4: Services */}
             <div>
               <FieldLabel>التخصصات * (اختر واحدة أو أكثر)</FieldLabel>
               <CheckGroup name="services" options={services} cols={3} />
             </div>
 
-            {/* Row 4: Cities */}
+            {/* Row 5: Cities */}
             <div>
               <FieldLabel>المناطق * (اختر واحدة أو أكثر)</FieldLabel>
               <CheckGroup name="cities" options={cities} cols={3} />

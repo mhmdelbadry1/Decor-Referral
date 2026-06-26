@@ -14,6 +14,7 @@ export interface CompanyLeaderboardRow {
   specialty     : string[]
   cities        : string[]
   isBlacklisted : boolean
+  discountCode  : string | null
   received      : number
   claimed       : number
   verified      : number
@@ -143,6 +144,24 @@ function EditCompanyForm({
           رقم واتساب *
         </p>
         <input type="tel" name="phone" required dir="ltr" defaultValue={company.repWhatsapp ?? ''} style={{ ...inputStyle, letterSpacing: '0.04em' }} />
+      </div>
+
+      <div className="max-w-xs">
+        <p className="font-body font-medium mb-1" style={{ fontSize: '0.72rem', color: 'var(--color-ink-faint)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+          كود الخصم
+        </p>
+        <input
+          type="text"
+          name="discountCode"
+          dir="ltr"
+          defaultValue={company.discountCode ?? ''}
+          placeholder="مثال: DECOR2026"
+          maxLength={20}
+          style={{ ...inputStyle, letterSpacing: '0.08em', textTransform: 'uppercase' }}
+        />
+        <p className="font-body mt-1" style={{ fontSize: '0.68rem', color: 'var(--color-ink-faint)' }}>
+          اختياري — اتركه فارغاً لإزالة الكود
+        </p>
       </div>
 
       <div>

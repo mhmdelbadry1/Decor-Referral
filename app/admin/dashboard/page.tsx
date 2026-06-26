@@ -59,6 +59,7 @@ type CompanyRow = {
   specialty     : string[]
   city          : string[]
   is_blacklisted: boolean
+  discount_code : string | null
 }
 
 type BroadcastRow = {
@@ -79,7 +80,7 @@ export default async function AdminDashboardPage() {
 
     supabase
       .from('companies')
-      .select('id, name, rep_name, rep_whatsapp, specialty, city, is_blacklisted')
+      .select('id, name, rep_name, rep_whatsapp, specialty, city, is_blacklisted, discount_code')
       .order('name'),
 
     supabase
@@ -153,10 +154,11 @@ export default async function AdminDashboardPage() {
         specialty    : company.specialty ?? [],
         cities       : company.city ?? [],
         isBlacklisted: company.is_blacklisted ?? false,
+        discountCode : company.discount_code ?? null,
         received,
         claimed      : claimedByThis.length,
         verified     : verified.length,
-        closed        : closed.length,
+        closed       : closed.length,
         trustScore,
         ratings,
       }

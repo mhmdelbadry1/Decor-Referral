@@ -156,6 +156,8 @@ export default function ConsultationForm({
   const [skippedServices, setSkippedServices] = useState<string[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [pledged, setPledged] = useState(false)
+  const [noticeShown, setNoticeShown] = useState(false)
   const [data, setData] = useState<FormData>({
     city: null, services: [], budget: null, name: '', phone: '', phoneNormalized: null, email: '',
   })
@@ -166,6 +168,7 @@ export default function ConsultationForm({
   const budgetRef   = useRef<HTMLDivElement>(null)
   const nameRef     = useRef<HTMLInputElement>(null)
   const phoneRef    = useRef<HTMLInputElement>(null)
+  const pledgeRef   = useRef<HTMLLabelElement>(null)
   const questionRef = useRef<HTMLDivElement>(null)
 
   /* Move focus to step question for screen reader flow */
@@ -196,8 +199,9 @@ export default function ConsultationForm({
   }
 
   async function handleSubmit() {
-    if (!data.name)             { shake(nameRef.current);  return }
-    if (!data.phoneNormalized)  { shake(phoneRef.current); return }
+    if (!data.name)             { shake(nameRef.current);   return }
+    if (!data.phoneNormalized)  { shake(phoneRef.current);  return }
+    if (!pledged)               { shake(pledgeRef.current); return }
 
     setSubmitting(true)
     setSubmitError(null)
@@ -226,6 +230,7 @@ export default function ConsultationForm({
 
   /* Single-select helper (city, budget) */
   function select(key: keyof FormData, value: string) {
+    if (key === 'city') setNoticeShown(true)
     setData((d) => ({ ...d, [key]: value }))
   }
 
@@ -269,6 +274,44 @@ export default function ConsultationForm({
             بضعة أسئلة فقط — سنجد لك الشركة المناسبة
           </p>
         </div>
+
+        {/* Seriousness notice — appears after city is chosen, stays forever */}
+        {!submitted && (
+          <div
+            className="overflow-hidden"
+            style={{
+              maxHeight : noticeShown ? '120px' : '0px',
+              opacity   : noticeShown ? 1 : 0,
+              marginBottom: noticeShown ? '24px' : '0px',
+              transition: 'max-height 500ms ease, opacity 400ms ease, margin-bottom 500ms ease',
+            }}
+            role="note"
+            aria-hidden={!noticeShown}
+          >
+            <div
+              className="flex items-start gap-3 rounded-lg px-4 py-3 text-start"
+              style={{
+                background: 'var(--color-accent-muted)',
+                border    : '1px solid color-mix(in oklch, var(--color-accent) 35%, transparent)',
+              }}
+            >
+              <svg
+                width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                className="shrink-0 mt-0.5"
+                style={{ color: 'var(--color-accent)' }}
+                aria-hidden="true"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              <p className="font-body leading-[1.6]" style={{ fontSize: '0.85rem', color: 'var(--color-accent)' }}>
+                هذا الموقع مخصص للعملاء الجادين في تنفيذ مشاريع الديكور فعلياً — الطلبات الوهمية أو الاستفسارية تُهدر وقت الجميع.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Progress track — aria-label updated on step change */}
         {!submitted && (
@@ -532,6 +575,28 @@ export default function ConsultationForm({
 
               {/* ── Step navigation ───────────────────── */}
               <div className="flex flex-col gap-3 mt-6 pt-4 border-t border-line">
+                {/* Pledge checkbox — only on final step */}
+                {step === 3 && (
+                  <label
+                    ref={pledgeRef}
+                    className="flex items-start gap-3 cursor-pointer select-none rounded-lg px-4 py-3 transition-colors duration-150"
+                    style={{
+                      border: `1px solid ${pledged ? 'var(--color-accent)' : 'var(--color-line)'}`,
+                      background: pledged ? 'var(--color-accent-muted)' : 'var(--color-bg)',
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={pledged}
+                      onChange={(e) => setPledged(e.target.checked)}
+                      className="accent-accent w-4 h-4 mt-0.5 shrink-0 cursor-pointer"
+                      aria-required="true"
+                    />
+                    <span className="font-body text-[0.88rem] leading-[1.5]" style={{ color: pledged ? 'var(--color-accent)' : 'var(--color-ink-dim)' }}>
+                      أتعهد بجدية الطلب وأنني أبحث فعلياً عن شركة للتنفيذ
+                    </span>
+                  </label>
+                )}
                 {submitError && (
                   <p className="text-[0.83rem] text-center" style={{ color: 'oklch(65% 0.18 25)' }}>
                     {submitError}

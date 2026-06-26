@@ -28,7 +28,7 @@ export async function submitLead(data: unknown): Promise<SubmitLeadResult> {
       .select('services')
       .eq('customer_phone', phone)
       .eq('city', city)
-      .in('status', ['معلق', 'تم التواصل', 'تمت الزيارة'])
+      .in('status', ['قيد المراجعة', 'معلق', 'تم التواصل', 'تمت الزيارة'])
 
     const activeServices = new Set<string>(
       (activeLeads ?? []).flatMap(l => l.services as string[])
@@ -51,7 +51,7 @@ export async function submitLead(data: unknown): Promise<SubmitLeadResult> {
       city,
       services: newServices,
       budget,
-      status: 'معلق',
+      status: 'قيد المراجعة',
     })
 
     if (error) {

@@ -2,7 +2,6 @@ import Nav from '@/components/Nav'
 import Hero from '@/components/Hero'
 import About from '@/components/About'
 import Process from '@/components/Process'
-import PartnerRegistrationForm from '@/components/PartnerRegistrationForm'
 import Footer from '@/components/Footer'
 import { getFormConfig } from '@/lib/getFormConfig'
 
@@ -21,10 +20,6 @@ export default async function LandingPage() {
         />
         <About />
         <Process />
-        <PartnerRegistrationForm
-          cities={config.cities}
-          services={config.services}
-        />
       </main>
 
       <Footer />

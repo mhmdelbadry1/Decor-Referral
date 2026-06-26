@@ -9,10 +9,6 @@ type Props = {
 }
 
 export default function Hero({ cities, services, budgets }: Props) {
-  function scrollToPartner() {
-    document.getElementById('partners-section')?.scrollIntoView({ behavior: 'smooth' })
-  }
-
   return (
     <>
       {/* Compact value-prop header */}
@@ -45,31 +41,6 @@ export default function Hero({ cities, services, budgets }: Props) {
       {/* Client form — directly visible without scrolling */}
       <ConsultationForm cities={cities} services={services} budgets={budgets} />
 
-      {/* Partner CTA strip */}
-      <div className="bg-bg py-10 px-6 text-center border-t border-line">
-        <p
-          className="text-ink-dim mb-3"
-          style={{ fontSize: 'clamp(0.9rem, 2vw, 1rem)' }}
-        >
-          هل أنت صاحب شركة أو مقاول ديكور؟
-        </p>
-        <button
-          type="button"
-          onClick={scrollToPartner}
-          className="
-            inline-flex items-center gap-2
-            bg-transparent border border-accent text-accent
-            font-body font-medium text-[0.95rem]
-            px-7 py-[10px] rounded-full cursor-pointer
-            transition-all duration-[180ms]
-            hover:bg-accent hover:text-surface hover:-translate-y-px
-            active:scale-[0.98]
-            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg
-          "
-        >
-          سجّل شركتك واستقبل العملاء ←
-        </button>
-      </div>
     </>
   )
 }

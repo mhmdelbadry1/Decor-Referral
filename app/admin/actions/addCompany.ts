@@ -24,6 +24,7 @@ export async function addCompany(
     phone       : formData.get('phone'),
     services    : formData.getAll('services'),
     cities      : formData.getAll('cities'),
+    discountCode: formData.get('discountCode'),
   }
 
   const PartnerSchema = buildPartnerSchema({
@@ -38,18 +39,21 @@ export async function addCompany(
   }
 
   const { companyName, contactName, phone, services, cities } = parsed.data
+  const discountCode = (raw.discountCode as string | null)?.trim() || null
   const supabase = createServerClient()
 
   const { error } = await supabase.from('companies').insert({
-    name        : companyName,
-    specialty   : services,
-    city        : cities,
-    rep_whatsapp: phone,
-    rep_name    : contactName,
+    name         : companyName,
+    specialty    : services,
+    city         : cities,
+    rep_whatsapp : phone,
+    rep_name     : contactName,
+    discount_code: discountCode,
   })
 
   if (error) {
     console.error('[addCompany] DB error:', error.message)
+    if (error.code === '23505') return { error: 'كود الخصم هذا مستخدم بالفعل — اختر كوداً آخر' }
     return { error: 'فشل في إضافة الشركة، يرجى المحاولة مرة أخرى' }
   }
 
